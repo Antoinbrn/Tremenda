@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Users/Antoi/OneDrive/Documents/GitHub/Tremenda/Code/src",
-      "program": "c:/Users/Antoi/OneDrive/Documents/GitHub/Tremenda/Code/src/build/Debug/outDebug",
+      "cwd": "c:/Users/Antoi/OneDrive/Documents/GitHub/Tremenda/Main/src",
+      "program": "c:/Users/Antoi/OneDrive/Documents/GitHub/Tremenda/Main/src/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
