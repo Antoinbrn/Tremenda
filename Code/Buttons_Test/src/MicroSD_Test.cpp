@@ -22,8 +22,8 @@
 
 #define SCREEN_WIDTH 128 // define the screen width in pixels
 #define SCREEN_HEIGHT 64 // define the screen height in pixels
-
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+/*
+extern Adafruit_SSD1306 display;
 
 SPIClass spi(0);
 
@@ -414,4 +414,4 @@ void setup(){
 
 void loop(){
 
-}
+}*/
