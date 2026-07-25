@@ -1,24 +1,22 @@
-// Basic libraries
-#include <Arduino.h>
+/*#include <Arduino.h>
 #include <Wire.h>
 
-// Libraries for TFT screen
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h> //Library for the TFT chip
+//Libraries for TFT
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ILI9341.h> // Hardware-specific library for ST7789 (240x320)
 
-// MicroSD card
 #include <SPI.h>
 #include <FS.h>
 #include <SD.h>
 #include <vector>
 
-//Defines the exact pins connected to your ESP32 Model
-#define TFT_CS     11
-#define TFT_RST    10
-#define TFT_DC     9
-#define TFT_MOSI   23  // SDA / DIN Pin
-#define TFT_SCLK   18  // SCL / CLK Pin
-#define TFT_MISO   19  // MISO / SDO Pin
+// Define the exact pins connected to your ESP32-C3
+#define TFT_CS     2
+#define TFT_RST    0
+#define TFT_DC     1
+#define TFT_MOSI   5  // SDA / DIN Pin
+#define TFT_SCLK   4  // SCL / CLK Pin
+#define TFT_MISO   6  // MISO / SDO Pin
 
 //Color definition
 #define COLOR_BACKGROUND ILI9341_BLACK
@@ -26,22 +24,23 @@
 #define COLOR_HIGHLIGHT ILI9341_NAVY
 #define COLOR_TEXT_HI ILI9341_YELLOW
 #define COLOR_BORDER ILI9341_DARKGREY
+
 //defines the custom pins for the SD module
-#define SCK 18
-#define MISO 23
-#define MOSI 19
-#define CS 17
+#define SCK 4
+#define MISO 6
+#define MOSI 5
+#define CS 7
 
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 320
 
 //Define the buttons pin and their names
-#define Left 13
-#define Right 27
-#define Up 14
-#define Down 12
-#define Vol_Up 6
-#define Vol_Down 7
+#define Left 20
+#define Right 21
+#define Up 21
+#define Down 3
+#define Vol_Up 10
+#define Vol_Down  9
 #define Ok_Pin 8
 
 //Defines file explorer parameters
@@ -377,4 +376,4 @@ void loop() {
     if (stateChanged) {
         updateDisplay();
     }
-}
+}*/
