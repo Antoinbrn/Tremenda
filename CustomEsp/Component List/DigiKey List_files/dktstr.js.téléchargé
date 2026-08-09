@@ -1,0 +1,753 @@
+// -----------------------------------------------------------------------------------
+//      dktstr - DigiKey Variant Testing v0.19
+// ----------------------------------------------------------------------------------*/
+
+
+let tests = typeof variant_tests === 'undefined' ? [] : variant_tests.map(test => ({
+    ...test,
+    state: test.state.toLowerCase(),
+    userAge: test.userAge.toLowerCase(),
+    domains: test.domains.toLowerCase(),
+    url: test.url.toLowerCase(),
+    path: test.path.toLowerCase(),
+    query: test.query.toLowerCase(),
+    hash: test.hash.toLowerCase(),
+    languages: test.languages.toLowerCase(),
+    currency: test.currency.toLowerCase(),
+    scheduled: test.scheduled.toLowerCase() ?? "",
+    devices: test.devices.toLowerCase(),
+    geoIP: test.geoIP.toLowerCase()
+}));
+
+let messages = typeof important_messages === 'undefined' ? [] : important_messages.map(msg => ({
+    ...msg,
+    state: msg.state.toLowerCase(),
+    userAge: msg.userAge?.toLowerCase() ?? "",
+    domains: msg.domains.toLowerCase(),
+    url: msg.url.toLowerCase(),
+    path: msg.path.toLowerCase(),
+    languages: msg.languages?.toLowerCase() ?? "",
+    currency: msg.currency?.toLowerCase() ?? "",
+    scheduled: msg.scheduled.toLowerCase() ?? "",
+    geoIP: msg.geoIP?.toLowerCase() ?? ""
+}));
+
+let testsOnPage = {name: 'tests', items: []}
+let userAge, forcedTest, forcedTestID, forcedTestSplit;
+let loggedInStatus = sessionStorage.getItem("loggedInStatus") || null;
+let geoIpLocation = sessionStorage.getItem("geoIpLocation") || "unknown";
+
+let currentHost = location.host.toLowerCase();
+let currentPath = location.pathname == "/" ? "" : location.pathname.toLowerCase();
+let currentQuery = location.search.toLowerCase();
+let currentHash = location.hash.toLowerCase();
+let currentUrl = currentHost + currentPath;
+let currentDomain = currentHost.split(".").pop();
+let currentLang = typeof __headerData !== 'undefined' ? __headerData.lang.toLowerCase() : document.documentElement.lang.slice(0, 2).toLowerCase();
+let currentCurr = typeof __headerData !== 'undefined' ? __headerData.cur.toLowerCase() : "O_o";
+let currentSite = typeof __headerData !== 'undefined' ? __headerData.site.toLowerCase() : currentDomain === "com" ? "us" : currentDomain;
+
+let dkDateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Chicago"}));
+let formattedTime = dkDateTime.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'}).replace(":","");
+let formattedDate = `${dkDateTime.getFullYear().toString().slice(-2)}${dkDateTime.getMonth()<9 ? '0'+(dkDateTime.getMonth()+ 1) : dkDateTime.getMonth()+1}${dkDateTime.getDate()<=9 ? '0'+(dkDateTime.getDate()) : dkDateTime.getDate()}`
+
+let isDigiKeyTest = (["digikeytest","digikeydev"].includes(currentHost.split('.')[0]));
+let blockedHost = ["punchout","punchouttest","punchoutdev","local.digikey","localhost","sc-cd-preview","internaltools","mylist.digikey.us"].some(item => currentHost.includes(item));
+let isTestingTests = false;
+
+let deviceType = "";
+const userAgent = navigator.userAgent.toLowerCase();
+const screenWidth = window.innerWidth;
+const isMobile = /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|[ai]pod)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|rim)|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(userAgent) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rim)|al(av|ca|co)|amoi|an(droid|ex|ny)|aq(ku|or)|arc(h|k)|av(mo|pm)|ba(cr|ad)|bd(eg|me|s )|bi(lo|st)|br(ex|me)|bs(ad|er)|bu(ek|in)|cw(od|ze)|cr(ad|ze)|da(ia|ul)|dc(ad|ik)|de(ad|tx)|di(g |go|mo)|do(c |po|tr)|ds(12|an)|el(ad|so)|er(ic|ok)|es(la|te)|ez(ho|ei)|fly(|_)|g1 u|g560|gf5|gi(mo|wa|yi)|gr(ad|un)|haie|hcit|hd(ad|gf)|hg(mo|zk)\|hp(ai|og)|hs(ar|ev)|ht(lg|si)|hu(ba|oo)|ig01|ikom|imei|ipaq|iris|jm(c |ip)|jk(mo|pr)|ke(bm|nf)|kg(ti|to)|klg |ko(sh|ri)|kpt |kwc |kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50t|54m|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(ad|ri|un)|me(rc|sa|ve)|mi(ne|od)|mm(ad|ut)|mu(ey|ki)|nc(01|by|lo)|n200|n20mr|n500|n700|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|to|wg)|phil|pire|pl(ay|uc)|pn2|po(ck|rt|se)|prox|psio|pt\-ch|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ad|ma|si)|sc(oo|we)|sm(b |ar|t)|sh(ll|ow)|si(em|vau)|sq(a|t)|t2ma|tc(ad|pf)|tk(ad|pf)|tm(ad|er)|to(ad|pr|sh)|tr(ad|me)|ts(ad|im)|ui(gi|lk)|v\-mo|va(lg|us)|vk(49|50|190|210)|vm(ad|er)|voda|vulc|vx(5d|64)|wa(dg|cr)|wkbe|we(nd|on)|x700|yas |your|zeto|zte\-/i.test(userAgent.substr(0, 4));
+const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows non-mobile)|kindle|playbook|silk)|ip(ad|od)/i.test(userAgent) && !isMobile;
+const isDesktop = !isMobile && !isTablet && (/(windows|macintosh|linux)/i.test(userAgent) || screenWidth >= 1024);
+const isDataDog = userAgent.includes("datadog");
+
+if (isMobile) {
+    deviceType = "phone";
+} else if (isTablet) {
+    deviceType = "tablet";
+} else if (isDesktop) {
+    deviceType = "desktop";
+} else {
+    deviceType = "unknown";
+}
+
+var __dktst = __dktst || {
+    getRandomInt: function (maxInt) {
+        return Math.floor(Math.random() * maxInt);
+    },
+    getQueryStringValue: function (key) {
+        let kvs = window.location.search.substring(1).split('&');
+        let i, parts;
+        for (i = 0; i < kvs.length; i++) {
+            parts = kvs[i].split('=');
+            if (parts[0] === key) {
+                return parts[1];
+            }
+        }
+        return undefined;
+    },
+    setCookie: function (cname, cvalue, exdays) {
+        const d = new Date();
+        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+        let expires = "expires=" + d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    },
+    getCookie: function (cname) {
+        let name = cname + "=";
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return null;
+    },
+    eatCookie: function (value) {
+        if (value.length === 4) {
+            const cookies = document.cookie.split(';');
+            const regex = /dktst_\d{4}/;
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                const cookieName = cookie.split('=')[0];
+                if (regex.test(cookieName) && cookieName === "dktst_"+value) { 
+                    document.cookie = cookieName + '=; Max-Age=-99999999;path=/';
+                    console.log("Cookie " + cookieName + " eaten! ¯\_(ツ)_/¯")
+                }
+            }
+        } else {
+            document.cookie = value + '=; Max-Age=-99999999;path=/';
+            console.log("Cookie " + value + " eaten! ¯\_(ツ)_/¯")
+        }
+    },
+    listCookie: function() {
+        const cookies = document.cookie.split(';');
+        const matchingCookies = [];
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name.includes("dktst_")) {
+            matchingCookies.push({ name, value });
+            }
+        }
+        matchingCookies.forEach(obj => console.log(obj.name + ': ' + obj.value)); 
+    },
+    splitUsers: function (testId) {
+        if (!__dktst.getCookie("dktst_" + testId)) {
+            let userInt = __dktst.getRandomInt(100);
+            let thisTest = tests.find(test => test.id === testId);
+            let userTotal = thisTest.users;
+            let userSplit = thisTest.split;
+            if (userInt >= userTotal) {
+                __dktst.setCookie("dktst_" + testId, "skipped", 90);
+            } else {
+                let normalizedInt = (userInt / userTotal) * 100;
+                if (userSplit.includes(',')) {
+                    let splits = userSplit.split(',').map(Number);
+                    let currentRange = 0;
+                    let assigned = false;
+
+                    for (let i = 0; i < splits.length; i++) {
+                        currentRange += splits[i];
+                        if (normalizedInt < currentRange) {
+                            __dktst.setCookie("dktst_" + testId, "variant_" + i, 90);
+                            assigned = true;
+                            break; 
+                        }
+                    }
+                    if (!assigned) {
+                        __dktst.setCookie("dktst_" + testId, "control", 90);
+                    }
+                } else {
+                    if (normalizedInt < Number(userSplit)) {
+                        __dktst.setCookie("dktst_" + testId, "variant", 90);
+                    } else {
+                        __dktst.setCookie("dktst_" + testId, "control", 90);
+                    }
+                }
+            }
+        }
+    },
+    waitForEl: function (selector, callback) {
+        if (document.querySelector(selector)) {
+            callback();
+        } else {
+            setTimeout(function () {
+                __dktst.waitForEl(selector, callback);
+            }, 100);
+        }
+    },
+    findElementByTextContent: function (selector, searchText) {
+        const elements = document.querySelectorAll(selector);
+        for (const element of elements) {
+          if (element.textContent.includes(searchText)) {
+            return element; 
+          }
+        }
+        return null;
+    },
+    addCssFile: function(cssPath) {
+        if (document.querySelector("link[href*='"+cssPath+"']")) {
+            document.querySelector("link[href*='"+cssPath+"']").remove();
+        }
+        const link = document.createElement('link'); 
+        link.rel = 'stylesheet';
+        link.href = cssPath;
+        document.head.appendChild(link); 
+    },
+    addScriptFile: function(jsPath, testId) {
+        if (testId === "0000" || typeof testsOnPage == 'undefined' || !testsOnPage.items.some(item => testId.includes(item.id))) {
+            if (document.querySelector("script[src*='"+jsPath+"']")) {
+                document.querySelector("script[src*='"+jsPath+"']").remove();
+            }
+            const script = document.createElement('script');
+            script.src = jsPath;
+            script.async = true; 
+            script.onload = function() {
+            };
+            document.head.appendChild(script);
+            if (dktst_boss === "true") {
+                console.log((isDigiKeyTest ? "https://digikeytest.digikey.com":"https://www.digikey.com") + "/-/media/files/dktst/js/" + testId + ".js script added to page.")
+            }
+
+            let testOrMessage = testId.startsWith("8") ? important_messages : variant_tests
+            testsOnPage.items.push({id: testId, description: testOrMessage.filter(tests => (tests.id === testId)).map(tests => tests.name).toString()});
+        }
+    },
+    bossLevel: function() {
+        __dktst.setCookie("dktst_admin", "true", 365);
+    },
+    showMeTheTests: function() {
+        __dktst.setCookie("dktst_testing", "true", 365);
+    },
+    setTrackDynamicVariable: function(id, name, split) {
+        let testIdName = "AB_dktst_"+id+"__"+name.replace(/\s/g , "_");
+        // set tracking for ContentSquare
+        window._uxa = window._uxa || [];
+        window._uxa.push(["trackDynamicVariable", {key: testIdName, value: split}]);
+        // set tracking for DataDog
+        if (!isDigiKeyTest && typeof window.DD_RUM !== 'undefined' && window.DD_RUM !== null && typeof window.DD_RUM.addFeatureFlagEvaluation === 'function') {
+            window.DD_RUM.addFeatureFlagEvaluation(testIdName, split); 
+        }
+    },
+    stringArrayMatch: function(str, arr) {
+        return arr.some(item => str.includes(item));
+    },
+    dkUserInfo: {},
+    getUserInfo: function() {
+        //Available results: CustomerId, DisplayName, Email, IsLoggedIn, Name, CompanyName, CompanyType, ClassCode, AssignedAccountRep
+        if (typeof __headerLayout !== "undefined") {         
+            if (typeof __headerLayout.addRegistrationStatusListener === 'function') {
+                __headerLayout.addRegistrationStatusListener(function doWithReturned(status) {
+                    __dktst.dkUserInfo = status;
+                    sessionStorage.setItem("loggedInStatus", status.IsLoggedIn)
+                })
+            } else if (typeof __headerLayout.registrationStatus !== "undefined") {
+                __dktst.dkUserInfo = __headerLayout.registrationStatus;
+                sessionStorage.setItem("loggedInStatus", __headerLayout.registrationStatus.IsLoggedIn)
+            } 
+            if (typeof __headerLayout.addGeoCountryListener === 'function') {
+                __headerLayout.addGeoCountryListener(function doWithReturned(status) {
+                    sessionStorage.setItem("geoIpLocation", status.toLowerCase())
+                })
+            }
+        } else {
+            let userInfoRequest = new XMLHttpRequest();
+            userInfoRequest.open('GET', '/MyDigiKey/Home/GetCurrentUser', true);
+            userInfoRequest.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    if (this.status >= 200 && this.status < 400) {
+                        try {
+                            __dktst.dkUserInfo = JSON.parse(this.responseText);
+                            sessionStorage.setItem("dktst_loggedInStatus", __dktst.dkUserInfo.IsLoggedIn)
+                        } catch (_) {
+                        }
+                    }
+                }
+            };
+        }
+    },
+    dkRecentPages: JSON.parse(localStorage.getItem('dkRecentPages') || '[]'),
+    dkRecentSearchTerms: JSON.parse(localStorage.getItem('dkRecentSearchTerms') || '[]'),
+    dkSessionPageVisits: sessionStorage.getItem("dkSessionPageVisits"),
+    dkSessionUniquePageVisits: JSON.parse(sessionStorage.getItem("dkSessionUniquePageVisits") || "[]"),
+    dkTestViews: JSON.parse(localStorage.getItem("dkTestViews") || "[]"),
+    dkPageVisits: 0,
+    dkSupplierIds: JSON.parse(localStorage.getItem('dkSupplierIds') || '[]'),
+    dkPartClasses: JSON.parse(localStorage.getItem('dkPartClasses') || '[]'),
+    dkMfgPartNumbers: JSON.parse(localStorage.getItem('dkMfgPartNumbers') || '[]'),
+    dkPartNumbers: JSON.parse(localStorage.getItem('dkPartNumbers') || '[]'),
+    dkProductIds: JSON.parse(localStorage.getItem('dkProductIds') || '[]'),
+    logUserData: function() {
+        if (typeof(Storage) !== "undefined") {
+            //log if user's first time on the site or returning based on session vs local storage items
+            if (sessionStorage.getItem("immaNew") == "true") {
+                userAge = "new";
+            } else if (localStorage.getItem("immaReturning") == "true") {
+                userAge = "returning";
+            } else {
+                userAge = "new";
+                sessionStorage.setItem("immaNew","true");
+                localStorage.setItem("immaReturning","true");
+            }
+        }
+
+        if (typeof(Storage) !== "undefined") {
+            //log the last 10 unique pages visited starting with the current page
+            let pageUrl = window.location.href;
+            __dktst.dkRecentPages = __dktst.dkRecentPages.filter(h => h !== pageUrl);
+            __dktst.dkRecentPages.unshift(pageUrl);
+            __dktst.dkRecentPages = __dktst.dkRecentPages.slice(0, 10);
+            localStorage.setItem('dkRecentPages', JSON.stringify(__dktst.dkRecentPages));
+
+            //log the last 10 unique search terms entered starting with the current page
+            setTimeout(function() {
+                let searchTerm = document.querySelector('header .header__searchinput');
+                if (searchTerm && searchTerm.value !== "") {
+                    __dktst.dkRecentSearchTerms = __dktst.dkRecentSearchTerms.filter(h => h !== searchTerm.value);
+                    __dktst.dkRecentSearchTerms.unshift(searchTerm.value);
+                    __dktst.dkRecentSearchTerms = __dktst.dkRecentSearchTerms.slice(0, 10);
+                    localStorage.setItem('dkRecentSearchTerms', JSON.stringify(__dktst.dkRecentSearchTerms));
+                } 
+            }, 1000);
+
+            //log unique page visits and count
+            let currentPageUrl = window.location.href;
+            let currentPageVisits = 1;
+            let hereBefore = __dktst.dkSessionUniquePageVisits.filter(h => h.pageUrl == currentPageUrl);
+            if (hereBefore.length > 0) {
+                currentPageVisits = hereBefore[0].visits + 1; 
+                __dktst.dkPageVisits = currentPageVisits;
+            };
+            __dktst.dkSessionUniquePageVisits = __dktst.dkSessionUniquePageVisits.filter(h => h.pageUrl !== currentPageUrl);
+            __dktst.dkSessionUniquePageVisits.unshift({pageUrl: currentPageUrl, visits: currentPageVisits});
+            sessionStorage.setItem('dkSessionUniquePageVisits', JSON.stringify(__dktst.dkSessionUniquePageVisits));
+
+            //log total session page visits
+            if (__dktst.dkSessionPageVisits) {
+                __dktst.dkSessionPageVisits = parseInt(__dktst.dkSessionPageVisits) + 1;
+            } else {
+                __dktst.dkSessionPageVisits = 1;
+            }
+            sessionStorage.setItem("dkSessionPageVisits", __dktst.dkSessionPageVisits.toString());
+
+            //log part detail specific information - check for part class and supplier id to block running on 404 pages
+            if (currentPath.includes("/products/detail") && document.querySelector('meta[name="data-supplierid"]') && document.querySelector('meta[name="data-partclass"]')) {
+                //if pdp log up to 10 unique supplier ids
+                let supplierId = document.querySelector('meta[name="data-supplierid"]').content;
+                __dktst.dkSupplierIds = __dktst.dkSupplierIds.filter(h => h !== supplierId);
+                __dktst.dkSupplierIds.unshift(supplierId);
+                __dktst.dkSupplierIds = __dktst.dkSupplierIds.slice(0, 10);
+                localStorage.setItem('dkSupplierIds', JSON.stringify(__dktst.dkSupplierIds));
+                
+                //if pdp log up to 10 unique part classes
+                let partClass = document.querySelector('meta[name="data-partclass"]').content;
+                __dktst.dkPartClasses = __dktst.dkPartClasses.filter(h => h !== partClass);
+                __dktst.dkPartClasses.unshift(partClass);
+                __dktst.dkPartClasses = __dktst.dkPartClasses.slice(0, 10);
+                localStorage.setItem('dkPartClasses', JSON.stringify(__dktst.dkPartClasses));
+
+                //if pdp log up to 10 unique mfg part numbers
+                if (document.querySelector("h1[class*='manuProductNumber']")) {
+                    let mfgPartNumber = document.querySelector("h1[class*='manuProductNumber']").textContent;
+                    __dktst.dkMfgPartNumbers = __dktst.dkMfgPartNumbers.filter(h => h !== mfgPartNumber);
+                    __dktst.dkMfgPartNumbers.unshift(mfgPartNumber);
+                    __dktst.dkMfgPartNumbers = __dktst.dkMfgPartNumbers.slice(0, 10);
+                    localStorage.setItem('dkMfgPartNumbers', JSON.stringify(__dktst.dkMfgPartNumbers));
+                }
+                //if pdp log up to 10 unique dk part numbers 
+                if (document.querySelector("div[data-testid='product-info'] table tbody tr td ~ td div")) {
+                    let partNumber = document.querySelector("div[data-testid='product-info'] table tbody tr td ~ td div").textContent;
+                    __dktst.dkPartNumbers = __dktst.dkPartNumbers.filter(h => h !== partNumber);
+                    __dktst.dkPartNumbers.unshift(partNumber);
+                    __dktst.dkPartNumbers = __dktst.dkPartNumbers.slice(0, 10);
+                    localStorage.setItem('dkPartNumbers', JSON.stringify(__dktst.dkPartNumbers));
+                }
+
+                //if pdp log up to 10 unique product Ids
+                let productId = currentUrl.split("/").reverse()[0];
+                __dktst.dkProductIds = __dktst.dkProductIds.filter(h => h !== productId);
+                __dktst.dkProductIds.unshift(productId);
+                __dktst.dkProductIds = __dktst.dkProductIds.slice(0, 10);
+                localStorage.setItem('dkProductIds', JSON.stringify(__dktst.dkProductIds));
+            }
+        }
+    },
+    logTestView: function(testId) {
+        let currentTestViews = 1;
+        let seenBefore = __dktst.dkTestViews.filter(h => h.testId == testId);
+        if (seenBefore.length > 0) {
+            currentTestViews = seenBefore[0].views + 1; 
+        };
+        __dktst.dkTestViews = __dktst.dkTestViews.filter(h => h.testId !== testId);
+        __dktst.dkTestViews.unshift({testId: testId, split: __dktst.getCookie("dktst_"+testId), views: currentTestViews});
+        localStorage.setItem('dkTestViews', JSON.stringify(__dktst.dkTestViews));
+    },
+    csTrackEvent: function(eventName) {
+        window._uxa = window._uxa || [];
+        window._uxa.push(["trackPageEvent", eventName]);
+    },
+    csTrackError: function(errorMessage, testId, fileName, lineNumber, colNumber, stackTrace) {
+        window._uxa = globalThis._uxa || [];
+        window._uxa.push(["trackError", errorMessage, { "Test ID": testId, "File Name": fileName, "Line Number": lineNumber, "Column Number": colNumber, "Stack Trace": stackTrace }]);
+    },
+    dktstrClear: function() {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            if (cookie.startsWith("dktst_") && cookie != "dktst_optout") {
+            const cookieName = cookie.split('=')[0];
+            document.cookie = cookieName + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            }
+        }
+        localStorage.removeItem('dkRecentPages');
+        sessionStorage.removeItem("dkSessionPageVisits");
+        sessionStorage.removeItem("dkSessionUniquePageVisits");
+        localStorage.removeItem('dkSupplierIds');
+        localStorage.removeItem('dkPartClasses');
+        localStorage.removeItem('dkMfgPartNumbers');
+        localStorage.removeItem('dkPartNumbers');
+        localStorage.removeItem('dkProductIds');
+        localStorage.removeItem('dkTestViews');
+        localStorage.removeItem('loggedInStatus');
+        localStorage.removeItem('geoIpLocation');
+        localStorage.removeItem('immaReturning');
+        sessionStorage.removeItem('immaNew');
+    },
+    clearForcedTest: function() {
+        if (__dktst.getCookie("dktst_forced")) {
+            __dktst.eatCookie(__dktst.getCookie("dktst_forced"));
+            __dktst.eatCookie("dktst_forced")
+            let forcedUrl = new URL(window.location.href);
+            let params = forcedUrl.searchParams;
+            params.delete("dktst");
+            params.delete("dktst_split");
+            params.delete("dktst_id");
+            window.location.href = forcedUrl;
+        }
+    },
+    formatDate: function(testDate) {
+        let splitDate = testDate.split(":")[0].split("/");
+        let newDate = splitDate[2] + splitDate[0] + splitDate[1];
+        return newDate;
+    }
+}
+
+let dktst_boss = __dktst.getCookie("dktst_admin");
+
+function spaObserver(functionToCall) {
+    if (location.pathname.toLowerCase().includes("/products") || location.pathname.toLowerCase().includes("/mylists")) {
+        let target = document.querySelector('title');
+        let observer = new MutationObserver(function(mutations) {
+            let newPath = globalThis.location.pathname == "/" ? "" : globalThis.location.pathname.toLowerCase();
+            if (currentPath !== newPath) {
+                currentPath = newPath;
+                currentUrl = currentHost + currentPath;
+                testsOnPage = {name: 'tests', items: []};
+                functionToCall();
+            }
+        });
+        let config = { subtree: true, characterData: true, childList: true };
+        observer.observe(target, config);
+    }
+}
+
+let __dktstFilter = {
+    checkState: function(test) {
+        const splitState = test.state.split(",")
+        return test.state === "run" || (splitState.includes("prod") && !isDigiKeyTest) || (splitState.includes("test") && isDigiKeyTest) || test.id === forcedTestID || __dktst.getCookie("dktst_testing")
+    },
+    checkAge: function(test) {
+        return test.userAge === "" || test.UserAge === undefined || test.userAge === userAge
+    },
+    checkDomains: function(test) {
+        if (test.domains === "") return true;
+        const splitDomains = test.domains.split(",");
+        return splitDomains.includes(currentDomain) || (test.domains.includes("!") && !splitDomains.includes("!"+currentDomain));
+    },
+    checkPages: function(test) {
+        return test.allPages === "true"
+    },
+    checkUrl: function(test) {
+        return test.url === '' || (test.url !== "" && currentUrl !== "" && __dktst.stringArrayMatch(currentUrl, test.url.split(",")))
+    },
+    checkPath: function(test) {
+        return test.path === '' || (test.path === "homepage" && (currentPath === "" || currentPath.length <= 3)) || 
+        (test.path.includes("!") && !__dktst.stringArrayMatch(currentPath, test.path.replaceAll("!", "").split(","))) ||
+        (test.path !== "" && currentPath !== "" && __dktst.stringArrayMatch(currentPath, test.path.split(",")))
+    },
+    checkQuery: function(test) {
+        return test.query == "" || currentQuery.includes(test.query)
+    },
+    checkHash: function(test) {
+        return test.hash == "" || currentHash.includes(test.hash)
+    },
+    checkLanguages: function(test) {
+        if (test.languages === "" || test.languages === undefined) return true;
+        const splitLanguages = test.languages.split(",")
+        return (splitLanguages.includes(currentLang)) || (test.languages.includes("!") && !splitLanguages.includes("!"+currentLang))
+    },
+    checkCurrency: function(test) {
+        if (test.currency === "" || test.currency === undefined) return true;
+        const splitCurrency = test.currency.split(",")
+        return (splitCurrency.includes(currentCurr)) || (test.currency.includes("!") && !splitCurrency.includes("!"+currentCurr))
+    },
+    checkSchedule: function(test) {
+        if (test.scheduled === "" ||test.id === forcedTestID || __dktst.getCookie("dktst_testing")) return true;
+        if (test.scheduled === "true")  {
+            return "scheduled";
+        }
+    },
+    checkStartDate: function(test) {
+        const start = test.startDate.split(":");
+        const splitState = test.state.split(",")
+        const isAfterStart = test.startDate === "" || (splitState.includes("test") && isDigiKeyTest) || test.id === forcedTestID || __dktst.getCookie("dktst_testing") ||
+            (__dktst.formatDate(start[0]) < formattedDate) || (__dktst.formatDate(start[0]) === formattedDate && (start[1] === undefined || start[1] <= formattedTime));            
+        return isAfterStart;
+    },
+    checkEndDate: function(test) {
+        const end = test.endDate.split(":");
+        const splitState = test.state.split(",")
+        const isBeforeEnd = test.endDate === "" || (splitState.includes("test") && isDigiKeyTest) || test.id === forcedTestID || __dktst.getCookie("dktst_testing") ||
+            (__dktst.formatDate(end[0]) > formattedDate) || (__dktst.formatDate(end[0]) === formattedDate && (end[1] === undefined || end[1] >= formattedTime));
+        return isBeforeEnd;
+    },
+    checkDevice: function(test) {
+        return test.devices === "" || __dktst.stringArrayMatch(deviceType, test.devices.split(","))
+    },
+    checkDimensions: function(test) {
+        if (test.dimensions === "") return true;
+        const [min, max] = test.dimensions.split(",");
+        return window.matchMedia(`(min-width:${min}px)`).matches && window.matchMedia(`(max-width:${max}px)`).matches;
+    },
+    checkMaxViews: function(test) {
+        return (test.maxViews === "" || test.maxViews === undefined || test.maxViews >= __dktst.dkTestViews.find(o => o.testId === test.Id).views) 
+    },
+    checkCookies: function(test) {
+        return __dktst.getCookie(`dktst_${test.id}_complete`) !== "true" && !["blocked", "skipped"].includes(__dktst.getCookie(`dktst_${test.id}`))
+    },
+    checkSplit: function(test, timeoutMs = 5000) {
+        if (test.startsWith("8")) return true;
+        if (__dktst.getCookie("dktst_" + test)) return true;
+        __dktst.splitUsers(test);
+        const startTime = Date.now();
+        return new Promise((resolve) => {
+            const interval = setInterval(() => {
+                if (__dktst.getCookie("dktst_" + test)) {
+                    clearInterval(interval);
+                    resolve(true);
+                } else if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(interval);
+                    resolve(false); 
+                }
+            }, 250);
+        });
+    },
+    checkElement: function(test, timeoutMs = 10000) {
+        if (test.element === "" || test.element === undefined) return true;
+        const selector = test.element;
+        if (!selector || selector === "") return true;
+        if (document.querySelector(selector)) return true;
+
+        return new Promise((resolve) => {
+            const observer = new MutationObserver(() => {
+                if (document.querySelector(selector)) {
+                    cleanup();
+                    resolve("observed");
+                }
+            });
+    
+            const timeout = setTimeout(() => {
+                cleanup();
+                resolve(false);
+            }, timeoutMs);
+    
+            const cleanup = () => {
+                observer.disconnect();
+                clearTimeout(timeout);
+            };
+    
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    },
+    checkLogin: function(test, loggedInStatus) {
+        if (test.loggedIn === "" || test.loggedIn === undefined) return true;
+        return String(loggedInStatus) === String(test.loggedIn);
+    },
+    checkGeoIP: async function(test, geoIpLocation) {
+        if (test.geoIP === "" || test.geoIP === undefined) return true;
+        if (geoIpLocation === "unknown") return false;
+        const geoList = test.geoIP.split(",");
+        if (test.geoIP.includes("!")) return !geoList.includes("!" + geoIpLocation);
+        return geoList.includes(geoIpLocation);
+    },
+    processAsyncTests: async function(runTest) {
+        const finalResults = await Promise.all(runTest.map(async (test) => {
+            const [geo, element, login, split] = await Promise.all([
+                __dktstFilter.checkGeoIP(test, geoIpLocation),
+                __dktstFilter.checkElement(test),
+                __dktstFilter.checkLogin(test, loggedInStatus),
+                __dktstFilter.checkSplit(test.id)
+            ]);
+            const asyncFailures = [];
+            if (!geo) asyncFailures.push("geo_fail: "+test.geoIP);
+            if (!element) asyncFailures.push("element_fail: "+test.element);
+            if (!login) asyncFailures.push("login_fail: expected "+test.loggedIn+" but was "+loggedInStatus);
+            if (!split) asyncFailures.push("split_fail: user not assigned to a variant within timeout");
+            const isFullyPassed = asyncFailures.length === 0;
+            let versionNumber = test.version;
+            if (forcedTestID === test.id) {
+                versionNumber = Math.floor(Math.random() * 9900) + 100;
+            }
+            if (isFullyPassed) {
+                __dktst.addScriptFile(`https://sc-c.digikeyassets.com/-/media/files/dktst/js/${test.id}.js?v=${versionNumber}`, test.id);
+                __dktst.logTestView(test.id);
+            }
+            return { id: test.id, passed: isFullyPassed, failures: asyncFailures };
+        }));
+        if (dktst_boss === "true") {
+            console.log("Promise Results:", finalResults);
+        }
+    }
+}
+
+//filter for important messages to be displayed regardless of cookie settings
+if (!blockedHost && (!isDataDog || (isDataDog && __dktst.getCookie("showDatadogTests") != null)) && !__dktst.getCookie("noAbTests")) {
+    function runmessages() {
+        const messageTracking = messages.map(message => {
+            const results = {
+                id: message.id,
+                failures: [],
+                name: message.name
+            };
+            if (!__dktstFilter.checkState(message)) results.failures.push("state");
+            if (!__dktstFilter.checkDomains(message)) results.failures.push("domain");
+            if (!__dktstFilter.checkPages(message)) {
+                if (!__dktstFilter.checkUrl(message)) results.failures.push("page_url");
+                if (!__dktstFilter.checkPath(message)) results.failures.push("page_path");
+            }        
+            if (!__dktstFilter.checkLanguages(message)) results.failures.push("languages");
+            if (!__dktstFilter.checkStartDate(message)) results.failures.push("start_date");
+            if (!__dktstFilter.checkEndDate(message)) results.failures.push("end_date");
+            if (!__dktstFilter.checkMaxViews(message)) results.failures.push("max_views");
+            if (!__dktstFilter.checkCookies(message)) results.failures.push("complete_blocked_skipped");
+
+            results.passed = results.failures.length === 0;
+            if (dktst_boss) {
+                console.log(results)
+            }
+            return results;
+        });
+        const runMessages = messages.filter(t => messageTracking.find(r => r.id === t.id).passed);
+        __dktstFilter.processAsyncTests(runMessages);
+        spaObserver(runmessages);
+    } runmessages();
+}
+
+//check for consent cookies and only run a/b tests if all have been accepted
+const ConsentCookieName = 'OptanonConsent';
+const ConsentCookieMatch = document.cookie.match(new RegExp('(^| )' + ConsentCookieName + '=([^;]+)'));
+if (ConsentCookieMatch && !blockedHost && (!isDataDog || (isDataDog && __dktst.getCookie("showDatadogTests") != null)) && !__dktst.getCookie("noAbTests")) {
+    const ConsentCookieValue = ConsentCookieMatch[2];
+    if (ConsentCookieValue && ConsentCookieValue.includes('C0002')) {
+        function rundktstr() {
+            //check for optout cookie value or query string and ignore all tests if exists, if no cookie then create one and set it for 90 days
+            let dktstQuery = __dktst.getQueryStringValue("dktst");
+            
+            if (dktstQuery == "optout" || __dktst.getCookie("dktst_optout") == "true") {
+                if (!__dktst.getCookie("dktst_optout")) {
+                    __dktst.setCookie("dktst_optout", "true", 90);
+                    __dktst.dktstrClear();
+                }
+            } else { 
+                //check for testid and split in query string
+                let dktstQueryId = __dktst.getQueryStringValue("dktst_id");
+                let dktstQuerySplit = __dktst.getQueryStringValue("dktst_split");
+
+                //check for preview url parameter to load the script for a specific test for QA and previewing tests before going live
+                if (dktstQuery == "preview" && dktstQueryId !== 'undefined' && dktstQuerySplit !== 'undefined') {
+                    __dktst.setCookie("dktst_" + dktstQueryId, dktstQuerySplit, 0.01);
+                    __dktst.addScriptFile(`/-/media/files/dktst/js/${dktstQueryId}.js?v=${Math.floor(Math.random() * 9900) + 100}`, dktstQueryId);
+                }
+
+                //check for blocked url parameter and set cookie to block a specific test per id in url
+                if (dktstQuery == "block" &&  dktstQueryId !== 'undefined') {
+                    __dktst.setCookie("dktst_" + dktstQueryId, "blocked", 90);
+                }
+                
+                //check for set url parameter and set the cookie for a specific test ?dktst=set&dktst_id=1234&dktst_split=variant to force into a specific split, overrides blocked but not optout
+                if (dktstQuery == "set" &&  dktstQueryId !== 'undefined' && dktstQuerySplit !== 'undefined') {
+                    __dktst.setCookie("dktst_" + dktstQueryId, dktstQuerySplit, 90);
+                }
+
+                // check for forced url parameter to force a specific test and split, overrides optout and block but will be overridden by set since set is more specific to setting a test vs forcing which is more general, forces the test for 2 days to allow for testing but not long term override
+                if (dktstQuery == "forced" && dktstQueryId !== 'undefined' && dktstQuerySplit !== 'undefined') {
+                    forcedTestID =  dktstQueryId;
+                    forcedTestSplit = dktstQuerySplit;
+                    __dktst.setCookie("dktst_forced", forcedTestID, "1")
+                    __dktst.setCookie("dktst_"+forcedTestID, forcedTestSplit, "1")
+                } else if (__dktst.getCookie("dktst_forced")) {
+                    forcedTestID = __dktst.getCookie("dktst_forced");
+                    forcedTestSplit = __dktst.getCookie("dktst_"+forcedTestID);
+                    if (!forcedTestSplit) {
+                        __dktst.setCookie("dktst_"+forcedTestID, "variant", "1")
+                    }
+                }
+
+                __dktst.logUserData();
+                __dktst.getUserInfo();
+
+                const testTracking = tests.map(test => {
+                    const results = {
+                        id: test.id,
+                        failures: [],
+                        name: test.name
+                    };
+                    if (!__dktstFilter.checkState(test)) results.failures.push("state");
+                    if (!__dktstFilter.checkAge(test)) results.failures.push("age");
+                    if (!__dktstFilter.checkDomains(test)) results.failures.push("domain");
+                    if (!__dktstFilter.checkPages(test)) {
+                        if (!__dktstFilter.checkUrl(test)) results.failures.push("page_url");
+                        if (!__dktstFilter.checkPath(test)) results.failures.push("page_path");
+                    }
+                    if (!__dktstFilter.checkQuery(test)) results.failures.push("query");
+                    if (!__dktstFilter.checkHash(test)) results.failures.push("hash");
+                    if (!__dktstFilter.checkLanguages(test)) results.failures.push("languages");
+                    if (!__dktstFilter.checkCurrency(test)) results.failures.push("currency");
+                    if (!__dktstFilter.checkStartDate(test)) results.failures.push("start_date");
+                    if (!__dktstFilter.checkEndDate(test)) results.failures.push("end_date");
+                    if (!__dktstFilter.checkDevice(test)) results.failures.push("device_type");
+                    if (!__dktstFilter.checkDimensions(test)) results.failures.push("dimensions");
+                    if (!__dktstFilter.checkMaxViews(test)) results.failures.push("max_views");
+                    if (!__dktstFilter.checkCookies(test)) results.failures.push("complete_blocked_skipped");
+                    results.passed = results.failures.length === 0;
+                    if (dktst_boss === "true") {
+                        console.log(results)
+                    }
+                    return results;
+                });
+                const runTests = tests.filter(t => testTracking.find(r => r.id === t.id).passed);
+                __dktstFilter.processAsyncTests(runTests);
+            }
+
+            if (dktst_boss === "true") {
+                setTimeout(function() {
+                    const script = document.createElement('script');
+                    script.src = "https://sc-c.digikeyassets.com/-/media/files/dktst/js/9000.js";
+                    script.async = true; 
+                    document.head.appendChild(script);
+                }, 2000);
+            }
+            spaObserver(rundktstr);
+        }
+        rundktstr();
+    }
+}

@@ -1,0 +1,217 @@
+/* CHAT HELP MODAL CSS */
+.chathelpModal {
+    max-width: 300px;
+    z-index: 1002;
+}
+
+.chathelpModal .agree-check {
+    background-color: var(--ice-grey);
+    margin-top: 5px;
+    margin-bottom: 10px;
+    padding: 15px;
+    
+}
+
+.dkdk .chathelpModal .agree-check {
+    background-color: #222;
+}
+
+.chathelpModal .dk-modal__close:before {
+    color: var(--white);
+}
+
+.chathelpModal label.dk-checkbox-label {
+    font-size: 14px;
+    color:var(--text-color)
+}
+
+.chathelpModal .tech-forum-text p {
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.chathelpModal .tech-forum-text a {
+  color: var(--link-blue);
+  text-decoration: none;
+  font-weight: bold
+}
+
+.chathelpModal .tech-forum-text a:hover {
+  text-decoration: underline;
+}
+
+.chathelpModal .dk-btn--lg {
+    width: 100%;
+}
+
+.chathelpModal .dk-modal__content {
+    padding: 10px 24px 24px;
+}
+
+.chathelpModal .dk-modal__title {
+    padding: 14px 24px 24px;
+    padding-bottom: 16px;
+    font-size: 22px;
+    font-weight: 700;
+    background-color: var(--red);
+    color: var(--white);
+}
+
+.chathelpModal.visible {
+    transform: none;
+    left: unset;
+    top: unset;
+    right: 5px;
+    bottom: 5px;
+}
+
+
+/* NEED HELP MODAL CSS */
+#helpModal {
+    z-index: 1001;
+}
+
+#helpModal {
+    padding: 24px 24px;
+    overflow:auto;
+    width: 568px;
+}
+
+#helpModal .dk-modal__close {
+    right: 26px;
+    top: 20px;
+}
+
+.rtl #helpModal .dk-modal__close {
+    right:auto;
+    left:26px;
+}
+
+#helpModal .helpTitle {
+    color: var(--text-color);
+    font-size: 22px;
+    display: flex;
+    font-weight: 700;
+    gap:8px;
+}
+
+#helpModal dk-input {
+    height: 40px;
+    width: 100%;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+#helpModal .helpSection {
+    border: 2px solid var(--cloud-grey);
+    border-radius: 4px;
+    height: 50px;
+    color: var(--text-color);
+    margin-bottom: 14px;
+    padding-left: 16px;
+    position: relative;
+}
+
+#helpModal a.helpSectionLink {
+    text-decoration: none;
+    display:block;
+    padding:16px;
+    border:2px solid var(--cloud-grey);
+    margin-bottom:12px;
+    border-radius:4px;
+    font-weight:bold;
+    font-size:16px;
+    padding-right:48px;
+    position:relative;
+    color:var(--text-color);
+}
+
+.rtl #helpModal a.helpSectionLink {
+    padding-right:16px;
+    padding-left:48px;
+}
+
+#helpModal a.helpSectionLink:after {
+    content:"\e92f";
+    position:absolute;
+    right:16px;
+    top:calc(50% - 8px)
+}
+
+.rtl #helpModal a.helpSectionLink:after {
+    content:"\e92e";
+    right:auto;
+    left:16px;
+}
+
+#helpModal .helpSection span {
+    font-size: 16px;
+    font-weight: 700;
+    position: relative;
+    top: 16px;
+}
+
+#helpModal span.icon-arrow-right {
+    position: absolute;
+    right: 24px;
+}
+
+#helpModal span.icon-search {
+    position: absolute;
+    right: 16px;
+    top: 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.rtl #helpModal span.icon-search {
+    right:auto;
+    left:16px;
+}
+
+#helpModal .helpInput {
+    position: relative;
+}
+
+#NewHelp .titleImg {
+    margin-right: 8px;
+    position: relative;
+    top: -4px;
+}
+
+#helpModal .icon-close {
+    position: absolute;
+    right: 34px;
+    top: 22px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#helpModal .helpSection:hover {
+    border: 2px solid var(--blurple);
+}
+
+#helpModal .helpFooter {
+    display: flex;
+    flex-wrap:wrap;
+    gap:6px
+}
+
+#helpModal .helpFooter a {
+    text-wrap:nowrap;
+    flex-grow:1;
+    display:flex;
+    gap:5px;
+    justify-content:center;
+    margin:0px;
+    padding:12px 6px
+}
+
+@media screen and (max-width:640px) {
+    #helpModal .helpFooter {
+        flex-direction:column;
+    }
+    #helpModal .helpFooter a {
+        width:100%;
+    }
+}

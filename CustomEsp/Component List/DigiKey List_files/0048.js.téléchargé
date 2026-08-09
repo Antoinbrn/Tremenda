@@ -1,0 +1,211 @@
+(function () {
+    let testId = "0048";
+    let testName = "Email Modal Update";
+    let userSplit = "100";
+
+    if (!__dktst.getCookie("dktst_" + testId)) {
+        __dktst.splitUsers(testId, userSplit);
+    }
+
+    if (__dktst.getCookie("dktst_" + testId) == "variant") {
+        // WAIT FOR ELEMENT FUNCTION
+        var waitForEl = function (selector, callback) {
+            if (document.querySelector(selector)) {
+                callback();
+            } else {
+                setTimeout(function () {
+                    waitForEl(selector, callback);
+                }, 100);
+            }
+        };
+
+        waitForEl('[track-data="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"]', function () {
+            // Create the style element
+            const styleSheet = document.createElement("style");
+
+            // Add your CSS rules inside template literals (backticks)
+            styleSheet.textContent = `
+                [track-data*="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"] {
+                    font-size: 0 !important;
+                }
+
+                [track-data*="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"] span {
+                    font-size: 12px;
+                }
+
+                [track-data*="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"]::after {
+                    content: "Email us";
+                    font-size: 13px;
+                }
+
+                .emailOptions a {
+                    all: unset; 
+                    padding: 0 !important;
+                }
+
+                .dk-card.emailOptions {
+                    position: absolute;
+                    top: 395px;
+                    padding: 10px !important;
+                    background-color: var(--ice-grey-darken);
+                    display: none;
+                    margin-bottom: 0px !important;
+                }
+                .dk-card.emailOptions.is-visible {
+                    display: block;
+                }
+
+                .emailOptions .dk-card {
+                    padding: 8px !important;
+                    border-radius: 4px;
+                    width: 100%;
+                    margin-bottom:0px !important;
+                }
+
+                .dk-card.customerSupport {
+                    margin-bottom: 6px !important;
+                    position: relative;
+                }
+
+                .customerSupport .optionsTitle {
+                    position: relative;
+                    left: -100px;
+                }
+
+                .optionsTitle {
+                    margin-bottom: 4px;
+                }
+
+                .optionsContent span {
+                    font-weight: 400;
+                    font-size: 10px;
+                    color: var(--stone-grey);
+                }
+
+                .emailAnOrder .optionsTitle {
+                    position: relative;
+                    left: -126px;
+                }
+
+                .emailAnOrder .optionsContent {
+                    position: relative;
+                    left: -40px;
+                }
+
+                .emailOptions .dk-card:hover {
+                    background: var(--ice-grey);
+                }
+                    
+                @media (max-width: 639px) {
+                    .dk-card.emailOptions {
+                        top: 445px;
+                    }
+                }
+
+                .dkdk .emailOptions .optionsTitle {
+                    color: white !important;
+                }
+
+                .dkdk .emailOptions .optionsContent span {
+                    color: white !important;
+                }
+
+
+                .dkdk .emailOptions .customerSupport:hover .optionsTitle, .dkdk .emailOptions .emailAnOrder:hover .optionsTitle, .dkdk .emailOptions .emailAnOrder:hover .optionsContent span, .dkdk .emailOptions .customerSupport:hover .optionsContent span  {
+                        color: black !important;
+                }
+
+                .dk-card.emailOptions a:hover div.dk-card,
+                .dk-card.emailOptions a:focus div.dk-card{
+                    border-color:#888;
+                    background-color: #fefefe;
+                }
+
+                .dk-card.emailOptions a:hover,
+                .dk-card.emailOptions a:focus {
+                    text-decoration: none;
+                }
+
+                .dk-card.emailOptions a {
+                    color: var(--text-color) !important;
+                }
+            `;
+
+            // Append the tag to the HTML head
+            document.querySelector('#footer').appendChild(styleSheet);
+
+            const link = document.querySelector('[track-data="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"]');
+            const target = document.querySelector(
+                '[track-data="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"]'
+            );
+
+            if (target) {
+                const emailOptions = document.createElement('div');
+                emailOptions.className = 'dk-card emailOptions';
+
+                emailOptions.insertAdjacentHTML(
+                    'beforeend',
+                    `
+                <a href="https://feedback.digikey.com/jfe/form/SV_es2M38ctYeEL930?Source=Need+Help+Modal+Test" track-data="event_state=Email customer support" target="_blank">            
+                <div class="dk-card customerSupport">
+                <div class="optionsTitle">
+                    <span>Email customer support</span>
+                </div>
+                <div class="optionsContent">
+                    <span>Order status, product issues, returns, quote requests, and general inquiries.</span>
+                </div>
+                </div>
+                </a>
+
+                <a href="mailto:orders@digikey.com?subject=Order%20Request&body=You%20may%20delete%20this%20text%20after%20reading.%0D%0A%0D%0APlease%20provide%20all%20information%20needed%20to%20process%20your%20order%2C%20including%20part%20numbers%2C%20quantities%2C%20account%20information%2C%20shipping%20details%2C%20and%20any%20special%20instructions.%0D%0A%0D%0AEmail%20orders%20are%20handled%20on%20a%20first-come%2C%20first-served%20basis%20by%20a%20DigiKey%20representative.%20To%20avoid%20processing%20delays%2C%20we%20recommend%20placing%20orders%20directly%20through%20our%20website.%0D%0A%0D%0AFor%20your%20security%2C%20do%20not%20include%20credit%20or%20debit%20card%20numbers%20or%20other%20payment%20card%20information%20in%20this%20email." track-data="event_state=Email an order">
+                <div class="dk-card emailAnOrder">
+                <div class="optionsTitle">
+                    <span>Email an order</span>
+                </div>
+                <div class="optionsContent">
+                    <span>Submit a purchase order or order request for processing.</span>
+                </div>
+                </div>
+                </a>
+                `
+                );
+
+                target.appendChild(emailOptions);
+            }
+            const trigger = document.querySelector(
+                '[track-data="ref_page_event= Contact Us New;page_type=RE;page_sub_type=HLP;event_state=Email"]'
+            );
+            
+
+            const emailOptions = document.querySelector('.dk-card.emailOptions');
+
+            if (trigger && emailOptions) {
+                let currentTrackData = trigger.getAttribute("track-data");
+                let newTrackData = currentTrackData + " us";
+                trigger.setAttribute("track-data", newTrackData);
+                trigger.addEventListener('click', () => {
+                    emailOptions.classList.toggle('is-visible');
+                });
+
+                emailOptions.addEventListener('mouseleave', () => {
+                    emailOptions.classList.remove('is-visible');
+                });
+            }
+
+
+
+            // // Replace the href attribute with the new URL
+            link.removeAttribute('href');
+            link.removeAttribute('target');
+            link.setAttribute('href', 'javascript:void(0);');
+
+
+            __dktst.setTrackDynamicVariable(testId, testName, "variant");
+        });
+    } else if (__dktst.getCookie("dktst_" + testId) == "control") {
+
+        __dktst.setTrackDynamicVariable(testId, testName, "control");
+    }
+
+})();
+

@@ -1,0 +1,3899 @@
+/* Minification failed. Returning unminified contents.
+(3420,15-16): run-time error JS1005: Expected '(': {
+(3424,5-6): run-time error JS1006: Expected ')': }
+(3424,5-6): run-time error JS1008: Expected '{': }
+(3424,6-7): run-time error JS1195: Expected expression: ,
+(3424,12): run-time error JS1004: Expected ';'
+(3424,12-13): run-time error JS1195: Expected expression: )
+(3427,58-59): run-time error JS1010: Expected identifier: .
+(3427,58-59): run-time error JS1195: Expected expression: .
+(3427,74-78): run-time error JS1034: Unmatched 'else'; no 'if' defined: else
+(3396,25-36): run-time error JS1301: End of file encountered before function is properly closed: function ()
+(3884,1): run-time error JS1107: Expecting more source characters
+(3884,1): run-time error JS1006: Expected ')'
+(3395,1-30): run-time error JS1301: End of file encountered before function is properly closed: function runTimer(itemNumber)
+(3884,1): run-time error JS1107: Expecting more source characters
+ */
+$(document).ready(function () {
+    bindEvents();
+    if ($("#AttentionViewModel_ErrorOccurred").val().toLowerCase() == "true") {
+        genericErrorModal();
+    }
+
+    updateLogisticsPartnerModalContent();
+    $('input[type=radio][name=CheckoutOptions]').change(function () {
+        toggleIndiaLogisticsPartnerVisibility();
+    });
+
+    var dataLayer = dataLayer || [];
+    GTMPageView();
+
+    if ($(document).find("#ItemsInCart").val() == "0") {
+        $("#preCheckOutEstimates").hide();
+    }
+    else if ($('#shipMethodDropdown') != undefined) {
+        dk.dropdowns('#shipMethodDropdown');
+    }
+    showHideDeleteButton();
+    refreshCartTools();
+
+    if ($("#divAddPartDropdown").length >= 1) {
+        dk.dropdowns("#divAddPartDropdown .dk-dropdown");
+        $("#divAddPartDropdown .dk-dropdown__container button").attr("type", "button"); //added to stop the autofocus of the dropdown. will be fixed in future style guide release. 
+
+        const dropdown = document.querySelector("#addPartDropdown");
+        dropdown.addEventListener("dkChange", (e) => {
+            const newValue = e.detail.value;
+            if (newValue) {
+                var clickText;
+                var locationValue = newValue.toLowerCase();
+                if (locationValue.includes("mydigikey")) {
+                    clickText = "Add Carts";
+                } else if (locationValue.includes("quotes")) {
+                    clickText = "Add Quote";
+                } else {
+                    clickText = "Add BOM";
+                }
+
+                GTMShoppingcartClick(clickText);
+                window.location.href = newValue;
+            }
+        });
+    }
+    if ($("#textImportTextArea").val().trim() == "") {
+        $('#btnImportParts').attr("disabled", true);
+    }
+
+    var opts = { color: '#ccc' };
+    var spinner = new Spinner(opts).spin(document.getElementById("uploadToCartDiv"));
+    RequestUpload();
+
+    $('#tblManualEntry div.trManualEntry').show();
+
+    function RequestUpload() {
+        $.ajax({
+            cache: false,
+            global: false,
+            url: '/Ordering/Upload/Upload/RequestUploadToCart/',
+            type: "GET",
+            success: function (result) {
+                let cleanData = DOMPurify.sanitize(result,
+                    {
+                        FORCE_BODY: true,
+                        ADD_TAGS: ['script', 'div', 'input', 'form', 'aside', 'span', 'b', 'u', 'header', 'section', 'footer'],
+                        ADD_ATTR: ['src', 'style', 'id', 'name', 'type', 'value', 'track-data', 'data-autoid', 'action', 'method',
+                            'enctype', 'class', 'role', 'aria-model', 'aria-hidden', 'data-button', 'title', 'data-modal-dismiss',
+                            'ref_page_event', 'add_part_method', 'onkeypress']
+                    });
+                if ($(cleanData).find("#UploadPartialPage").length > 0) {
+                    var dzDiv = $("#uploadToCartDiv");
+                    if (dzDiv.length > 0) {
+                        dzDiv.html(cleanData);
+                        $("#uploadFileTab").removeClass("hidden");
+                    }
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                // don't do an error popup here. just hide the bom dependencies
+                $(".addPartTabs__tabs li[data-tabName='uploadFileTab']").remove();
+                $("#uploadFileTab").remove();
+            }
+        });
+    }
+
+    $("#btnImportParts").click(function () {
+        var parts = $("#textImportTextArea").val();
+        var addedFrom = "importParts"
+        $.ajax({
+            url: "/ordering/shoppingcart/shoppingcart/ImportParts",
+            type: "POST",
+            data: { parts: parts },
+            success: function (data) {
+                var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+
+                if (data.response.BaseSuccess) {
+                    processAddPartsResponse(data.response, addedFrom, returnObj);
+                    refreshPage(addedFrom, returnObj)
+                    $('.AddPart').val('');
+                    $("#textImportTextArea").val('');
+                }
+
+                if (data.response.BaseSuccess !== true) {
+                    genericErrorModal();
+                    return;
+                }
+
+                // Display error partial view if present
+                if (data.errorPartialView) {
+                    $('#PartErrorTable tbody').append(data.errorPartialView);
+                    getPartResultsAndCallAssignIndexToPartErrorRows(data);
+                    $('#PartErrorContainer').removeAttr('hidden');
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                genericErrorModal();
+            }
+        });
+    });
+
+    // Update Cart Name When Changed
+    $(".cart-name").change(function (elem) {
+        updateCartName(elem);
+    });
+
+    // When they press the Enter Key in the manual entry fields, call the Add Part
+    $('.AddPart, .btnAddToCart').keypress(function (e) {
+        var key = e.which;
+        if (key == 13)  // the enter key code
+        {
+            // If they hold the enter key down, only call the AddToCart once.
+            var addBtnIsDisabled = $(".btnAddToCart").hasClass("disabled");
+            if (!addBtnIsDisabled) {
+                AddToCart();
+                $(".btnAddToCart").addClass("disabled");
+                return false;
+            }
+        }
+    });
+
+    $(".btnAddToCart").on("click", function () {
+        AddToCart();
+    });
+
+    $("#addToListButton").on("click", function () {
+        if ($("body").hasClass("registeredUser")) { addToListsGet() }
+        else { dk.modal('#loginRegisterDialog').show(); }
+    });
+    $("#newList").on("click", function () { $("#dialog-add_to_list_ok").attr("track-data", "ref_page_event=Add to List;event_state=New List") })
+    $("#existingList").on("click", function () { $("#dialog-add_to_list_ok").attr("track-data", "ref_page_event=Add to List;event_state=Existing List") })
+    $("#dialog-add_to_list_ok").on("click", function () { addToListPost() });
+    $("#saveForLaterButton").on("click", function () { saveForLater() });
+    $("#divDisplayEmptyCartMsg a").attr("ref_page_event", "Link to Product Index").on("click", function () { GTMShoppingcartClick("Link to Product Index") });
+
+    $("#dialog-add-to-list .dk-radio").on("change", function () {
+        $("#dialog-add_to_list_ok").removeClass("disabled");
+    })
+
+    //$(".dataTable tbody tr:not(.detailRow)").remove();
+
+    $('#textImportTextArea').keyup(function () {
+        var taVal = $.trim(this.value);
+        if ($.trim(this.value) == "") {
+            $('#btnImportParts').attr("disabled", true);
+        } else {
+            $('#btnImportParts').removeAttr("disabled");
+        }
+    });
+
+    createDetailsDataTableForCart();
+    if ($("#CartName").val() != undefined) {
+        showHideCartName($("#CartName").val().trim() == "");
+    }
+
+    if (document.getElementById("divCartDetailsButtons")) {
+        window.addEventListener('scroll', function () { moveTrash(); moveSummary(); });
+        window.onload = windowOnLoad();
+    }
+
+    $('#parts_0__partNumber').keyup(function (e) {
+        $('.detail-error-message').hide();
+    });
+
+    // only auto focus to the qty input if no parts on cart
+    if ($(".detailRow").length == 0) {
+        $('#parts_0__quantity').focus();
+    }
+
+    if ($("#AskCurrencyChange").val() == "True") {
+        ShowCurrencyPopupDialog();
+    }
+
+    if ($("#ShowPopupFromSearch").val() == "True") {
+        var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" }
+        processAddPartsResponse(jQuery.parseJSON($('#SearchAddOrUpdateResponse ').val()), "search", returnObj)
+    }
+
+    //fixAllPricesMessage();
+    RemoveManualEntryRequiredValidation();
+
+    if ($(".emptyCart").length <= 0) {  // <-- If cart is not empty
+        // Subtotals are stored in the DB and we must update them each time we come into the page for cases where parts are added outsideof  our shoppingcartapi ie. Upload File
+        if ($("#CalculatedSubtotal")[0].value != $("#Subtotal")[0].value) {
+            updateSubtotals();
+        } else {
+            $("#divWebAccessId").show();
+        }
+    } else if ($("#WebID")[0].value != '0') {
+        $("#divWebAccessId").show();
+    }
+
+    showHideDelayedDate();
+    setUrlOrdering();
+    refreshPackTypeDropdowns();
+
+    // Tariff Messaging Styling 
+    window.addEventListener('resize', resizeFun); 
+    tariffPriceAlignment(); //need to explicitly call the first time, all other adjustments are handled on window resize
+
+    //show ekom buttom if US site and TR location
+    __headerLayout.addGeoCountryListener(function doWithReturned(countryCode) {
+        if (__headerData.site == "US" && countryCode == "TR") {
+            $("<style type='text/css'> .ekom-button{ display:block !important;} </style>").appendTo("head");
+        }
+    });
+    if ($("#HighDemandItemSchedulesRemoved").val() == "True") {
+        dk.modal('#dialog-schedule-removed').show()
+    }
+});
+
+function debounce(func, wait, immediate) {
+    var timeout;
+    return function () {
+        var context = this, args = arguments;
+        var later = function () {
+            timeout = null;
+            if (!immediate) func.apply(context, args);
+        };
+        var callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func.apply(context, args);
+    };
+}
+// WINDOW RESIZE
+var resizeFun = debounce(function () {
+    tariffPriceAlignment();
+}, 200);
+
+function tariffPriceAlignment() {
+    var tariffRow = document.getElementsByClassName('cart-tariff_message');
+    if (tariffRow.length > 0) {
+        if (window.innerWidth > 1024) {
+            var itemUnitPrice = document.getElementsByClassName('detailRow_unitPrice_th')[0];
+            var itemExtendedPrice = document.getElementsByClassName('detailRow_extendedPrice_th')[0];
+
+            var itemUnitPriceInnerWidth = itemUnitPrice.offsetWidth - 8;
+            var itemExtendedPriceInnerWidth = itemExtendedPrice.offsetWidth - 32;
+
+            for (let row of tariffRow) {
+                row.querySelector('div:nth-of-type(3)').setAttribute('style', 'width: ' + itemUnitPriceInnerWidth + 'px');
+                row.querySelector('div:nth-of-type(4)').setAttribute('style', 'width: ' + itemExtendedPriceInnerWidth + 'px');
+            }
+        }
+        else {
+            for (let row of tariffRow) {
+                row.querySelector('div:nth-of-type(3)').setAttribute('style', 'width: auto');
+                row.querySelector('div:nth-of-type(4)').setAttribute('style', 'width: auto');
+            }
+        }
+    }
+}
+
+function toggleIndiaLogisticsPartnerVisibility() {
+    if (isCheckoutWithLogisticsPartnerSelected()) {
+        showIndiaLogisticsPartner();
+    }
+    else {
+        hideIndiaLogisticsPartner();
+    }
+}
+
+function isCheckoutWithLogisticsPartnerSelected() {
+    return $('input[name="CheckoutOptions"]:checked').val() === "with-logistics-partner"
+}
+
+function showIndiaLogisticsPartner() {
+    $("#IndiaLP-local-logistics-partner").show();
+    $("#total-heading").hide();
+    $("#cart-summary-heading").hide();
+    $("#subtotal").hide();
+    $("#cart-summary-table-1").hide();
+    $("#cart-summary-table-2").hide();
+    $("#IndiaLP-checkout-options").removeClass("checkout-options")
+    $("#divScheduleDelayButton").hide();
+    $("#divSecurityMessage").hide();
+    $("#IndiaLP-terms-conditions").show();
+    $("#dk-terms-conditions").hide();
+    $("#divPrimaryButton").hide();
+
+    const detailCount = $("#divSummaryBoxTable #ItemsInCart").val();
+    if (parseInt(detailCount) > 0) {
+        $("#checkout-with-LP-Button").show();
+    } else {
+        $("#checkout-with-LP-Button").hide();
+    }
+}
+
+function hideIndiaLogisticsPartner() {
+    $("#IndiaLP-local-logistics-partner").hide();
+    $("#cart-summary-heading").show();
+    $("#subtotal").show();
+    $("#total-heading").show();
+    $("#cart-summary-table-1").show();
+    $("#cart-summary-table-2").show();
+    $("#IndiaLP-checkout-options").addClass("checkout-options")
+    $("#divScheduleDelayButton").show();
+    $("#divSecurityMessage").show();
+    $("#IndiaLP-terms-conditions").hide();
+    $("#dk-terms-conditions").show();
+    $("#checkout-with-LP-Button").hide();
+    $("#divPrimaryButton").show();
+}
+
+function validateLogisticsPartnerSelection() {
+    // Don't show modal if core parts only. i.e. No warning messages to display
+    if ($('#ilp-modal-title').text() === 'Transfer cart to logistics partner') {
+        redirectToLogisticsPartner("Checkout with Logistics Partner");
+    }
+    else {
+        dk.modal("#dialog-ilp-modal").show();
+        modalCloseTriggers();
+    }   
+}
+
+function getLogisticsProviderModalFooter(modalType, buttons) {
+    const okFooter =
+        `<footer id="ilp-modal-footer" class="dk-modal__footer">
+    <button class="dk-btn__primary" data-modal-dismiss="true" onclick="GTMShoppingcartClick('${buttons.OkClickText}')">${buttons.OkButtonText}</button>
+        </footer>`;
+
+    const continueFooter =
+        `<footer id="ilp-modal-footer" class="dk-modal__footer">
+	<button id="btn-ilp-continue" class="dk-btn__primary" type="button" onclick="redirectToLogisticsPartner('${buttons.ContinueClickText}')">${buttons.ContinueButtonText}</button>
+	<button data-modal-dismiss="true" class="dk-btn__secondary" type="button" onclick="GTMShoppingcartClick('${buttons.CancelClickText}')">${buttons.CancelButtonText}</button>
+</footer>`;
+
+    if (modalType === "OK") {
+        return okFooter;
+    }
+    else {
+        return continueFooter;
+    }
+}
+
+function updateLogisticsPartnerModalContent() {
+    /* Don't call this endpoint unless order is ILP eligible.  */
+    if ($("#IsIndiaLogisticsPartnerAllowed").val() === "True") {
+        $.ajax({
+            url: "/ordering/shoppingcart/shoppingcart/GetLogisticsPartnerModalAsync",
+            type: "GET",
+            success: function (callbackObject) {
+                const modal = callbackObject.modal;
+                if (modal === null) return;
+
+                const modalFooter = getLogisticsProviderModalFooter(modal.ModalType, modal.Buttons);
+
+                $("#ilp-modal-title").text(modal.Title);
+                $("#ilp-modal-content").text(modal.Content);
+                $("#ilp-modal-footer").replaceWith(modalFooter);
+                $("#ilp-modal-x").attr("onclick", "GTMShoppingcartClick('" + modal.Buttons.XClickText + "');");
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                genericErrorModal();
+            }
+        });
+    }
+}
+
+function redirectToLogisticsPartner(clickText) {
+    GTMShoppingcartClick(clickText);
+
+    dk.modal("#dialog-ilp-modal").hide();
+    dk.modal("#dialog-ilp-loading").show();
+
+    $.ajax({
+        url: "/ordering/shoppingcart/shoppingcart/CheckoutWithLogisticsPartnerAsync",
+        type: "POST",
+        success: function (redirectUrl) {
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                dk.modal("#dialog-ilp-loading").hide();
+                genericErrorModal();
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            genericErrorModal();
+        }
+    });
+}
+
+function windowOnLoad() {
+    moveTrash();
+    moveSummary();
+    //fastAddAnalytics();  // This is now getting called from a callback function in analytics
+};
+
+function newCartDialog() {
+    var clickText = "New Cart";
+    dk.modal("#dialog-new-cart").show();
+    $("#dialog-new-cart_create").on("click", function (e) {
+        e.preventDefault();
+        GTMShoppingcartClick(clickText);
+        window.location.href = "/ordering/ShoppingCart/ShoppingCart/NewCart"
+    })
+    $("#dialog-new-cart_empty").on("click", function () {
+        var selected = [];
+        $("#cartDetails input:checkbox").each(function () {
+            if ($(this).attr('class') != 'chkSelectAll dk-checkbox') {
+                selected.push($(this).attr('id').replace('chkDelete', ''));
+            }
+        });
+        GTMShoppingcartClick(clickText);
+        DeletePart(selected);
+        dk.modal("#dialog-new-cart").hide();
+    })
+    return false
+}
+
+function moveTrash() {
+    var trashCans = $("#divCartDetailsButtons");
+    if (!__helpers.checkVisible(trashCans[0]) && !__helpers.checkVisible(document.getElementById("divAddParts")) && !__helpers.checkVisible(document.getElementById("footer"))) {
+        $("#divCartDetailsButtons").addClass("floatit");
+    } else if (__helpers.checkVisible(trashCans[0]) || __helpers.checkVisible(document.getElementById("divAddParts"))) {
+        $("#divCartDetailsButtons").removeClass("floatit");
+    }
+};
+
+function moveSummary() {
+    var addFrom = $("#divAddPartDropdown");
+    if (!__helpers.checkVisible(addFrom[0])) {
+        $(".right-column__summary-box").addClass("fixit");
+    } else if (__helpers.checkVisible(addFrom[0])) {
+        $(".right-column__summary-box").removeClass("fixit");
+    }
+}
+function updatePackType(itemSequence, cRef) {
+    var parts = [];
+    var dropstring = [];
+    $("#package-dropdown_" + itemSequence + " .dk-input option").each(function () {
+        dropstring.push($(this).attr("data-text"));
+    })
+    var partnumber = $("#package-dropdown_" + itemSequence + " .dk-input")[0].value;
+    var q1 = "";
+    dropstring.forEach((element) => {
+        if (element.includes(partnumber)) {
+            q1 = element.substring(0, element.indexOf("|") - 1);
+        }
+    })
+    var obj = { quantity: q1, partNumber: partnumber, cRef: cRef };
+    parts.push(obj);
+
+    $.ajax({
+        url: "/ordering/shoppingcart/shoppingcart/UpdatePackageType",
+        type: "POST",
+        //contentType: 'application/json',
+        data: { itemSeq: itemSequence, details: parts },
+        success: function (data) {
+            var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+            var addedFrom = "manualEntry";
+            let clickText = 'Change Packaging';
+            if (data.BaseSuccess == true) {
+                processAddPartsResponse(data, addedFrom, returnObj);
+
+                if (!returnObj.failuresExist) {
+                    refreshPage(addedFrom, returnObj);
+                    $('.AddPart').val('');
+                    $('#parts_0__quantity').focus();
+                }
+                else {
+                    if (returnObj.successIndices != "") {
+                        $.each(returnObj.successIndices.split('|'), function () {
+                            //parts_0__quantity
+                            $('#parts_' + this.toString() + '__quantity').val('');
+                            $('#parts_' + this.toString() + '__partNumber').val('');
+                            $('#parts_' + this.toString() + '__cRef').val('');
+                        });
+                        refreshParts(addedFrom, returnObj);
+                    }
+
+                    if (returnObj.errors.length > 0) {
+                        refreshPage(addedFrom, returnObj);
+                        errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, 'errors:' + returnObj.errors + '\n\n\nwarnings:' + returnObj.warnings)
+                    }
+                }
+                GTMShoppingcartClick(clickText);
+            }
+            else {
+                if (data.BaseRedirectUrl != "") {
+                    window.location.replace(data.BaseRedirectUrl);
+                }
+                else {
+                    errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                }
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            genericErrorModal();
+        }
+    });
+}
+
+function addToListsGet() {
+    var url = "/ordering/ShoppingCart/ShoppingCart/GetLists";
+    $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        success: function (data) {
+            Object.keys(data).forEach(function (key) {
+                let cleanId = DOMPurify.sanitize(data[key].Id, { USE_PROFILES: { html: true } });
+                let cleanName = DOMPurify.sanitize(data[key].ListName, { USE_PROFILES: { html: true } });
+                $("#addToListDropDown").append(`<option value='${cleanId}'>${cleanName}</option>`);
+            });
+            if ($("#addToListDropDown option").length >= 1) {
+                $("input[id='existingList']").prop("checked", true);
+                $("#dialog-add_to_list_ok").removeClass("disabled");
+                $("#existingList").parent().removeClass("hidden");
+                $("#addToListDropDown").removeClass("hidden");
+            } else {
+                $("#existingList").parent().addClass("hidden");
+                $("#addToListDropDown").addClass("hidden");
+            }
+
+            dk.modal("#dialog-add-to-list").show();
+            $("#addToListInput").on("focus", function () {
+                $("#newList").click();
+            })
+            $("#addToListDropDown").on("focus", function () {
+                $("#existingList").click();
+            })
+
+        },
+        error: function (req, status, error) {
+            dk.modal("#uploadAListErrorDialog").show();
+        }
+    });
+}
+
+/**
+ * Handles the "Add to List" button click, collecting selected parts and creating/updating a list.
+ * This function no longer validates for duplicate list names, as the myLists API now handles
+ * duplicates automatically by appending a suffix (e.g., "(1)", "(2)").
+ */
+function addToListPost() {
+    var partsForList = [];
+    var items = [];
+    $(".detailRow .dk-checkbox:checked").each(function () {
+        var partNumber = $(this).parent().parent().parent().find(".cart-partNumber a").text();
+        var quantity = $(this).parent().parent().parent().find(".part-quantity").val();
+        var cref = $(this).parent().parent().parent().find(".customer-reference").val();
+        var thisPart = { "requestedPartNumber": partNumber, "customerReference": cref, "quantities": [{ "quantity": Math.floor(quantity) }] };
+        partsForList.push(thisPart);
+
+        try {
+            var tagValue = $(this).parent().parent().parent().find(".GTMDetailTag").val();
+            var gtmTagValue = $.parseJSON(tagValue);
+            items.push(gtmTagValue);
+        }
+        catch (e) {
+            //dont let analytics break the page
+        }
+    })
+
+    if ($("#newList:checked").length) {
+        GTMAddToWishlist(items, "New List");
+
+        var listName = $("#addToListInput").val();
+        if (listName != "") {
+            var url = "/ordering/ShoppingCart/ShoppingCart/AddPartsToNewList";
+            var data = { listName: listName, requestedParts: partsForList }
+            // Pass the requested list name as a fallback in case the API doesn't return the actual name
+            addToListAjax(url, data, listName);
+        } else {
+            $("#addToListInput").addClass("dk-input--error");
+            $("#addToListInput").on("keypress", function () { $("#addToListInput").removeClass("dk-input--error"); })
+        }
+
+    } else {
+        GTMAddToWishlist(items, "Existing List");
+
+        var listId = $("#addToListDropDown").val();
+        var listName = $("#addToListDropDown option:selected").text();
+        var url = "/ordering/ShoppingCart/ShoppingCart/AddPartsToExistingList";
+        var data = { listId: listId, requestedParts: partsForList }
+        addToListAjax(url, data, listName);
+    }
+}
+
+/**
+ * Makes an AJAX call to add parts to a list (new or existing).
+ * For new lists, displays the actual list name returned by the API, which may differ from the requested name
+ * if a duplicate list name was detected (e.g., "MyList" -> "MyList(1)").
+ *
+ * @param {string} url - The endpoint URL (AddPartsToNewList or AddPartsToExistingList)
+ * @param {object} data - The request payload containing list information and parts
+ * @param {string} listName - The fallback list name to display if the API doesn't return one
+ */
+function addToListAjax(url, data, listName) {
+    $.ajax({
+        url: url,
+        type: 'post',
+        data: data,
+        datatype: 'json',
+        success: function (data) {
+            // Use the list name returned from the API if available, otherwise fall back to the provided listName
+            // For new lists with duplicate names, the API returns the modified name (e.g., "MyList(1)")
+            // For existing lists, the API doesn't return a ListName, so we use the fallback
+            const displayListName = data.ListName || listName;
+            $("#listLink").attr("href", "/" + __headerData.lang + "/mylists/list/" + data.ListId).text(displayListName);
+            dk.modal("#dialog-add-to-list").hide();
+            $("#addToListDropDown").html("");
+            $("#addToListInput").val("");
+            dk.modal("#dialog-add-to-list-success").show();
+        },
+        error: function (req, status, error) {
+            dk.modal("#dialog-add-to-list").hide();
+            $("#addToListDropDown").html("");
+            $("#addToListInput").val("");
+            genericerrormodal();
+        }
+    });
+}
+
+var savedParts = JSON.parse(localStorage.getItem("savedParts")) || new Array(0);
+function saveForLater() {
+    var addToCartText = $("#btnAddToCart").text();
+    var deleteText = $("#deleteButton").text();
+    var configParts = new Array(0);
+    var newSavedParts = new Array(0);
+
+    $("#divSaveForLater").show();
+    $(".detailRow .dk-checkbox:checked").each(function () {
+        var dkpn = $(this).parent().parent().parent().find(".cart-partNumber a").text();
+        var dklink = $(this).parent().parent().parent().find(".cart-partNumber a").attr("href");
+        var mfpn = $(this).parent().parent().parent().find(".cart-mfgPartNumber").text();
+        var mfname = $(this).parent().parent().parent().find(".cart-mfgName").text();
+        mfname = mfname.trim();
+        var desc = $(this).parent().parent().parent().find(".cart-description").text();
+        desc = desc.trim();
+        var img = $(this).parent().parent().parent().find(".cart-image img").attr("src");
+        var cref = $(this).parent().parent().parent().find(".cart-customerReference input").val();
+        var qty = $(this).parent().parent().parent().find(".cart-qtyInput input").val();
+
+        var configPart = $(this).parent().parent().parent().find(".FlagConfig").val();
+        var existInSavedList =
+            JSON.stringify(savedParts).indexOf(dkpn) !== -1
+            || JSON.stringify(newSavedParts).indexOf(dkpn) !== -1;
+
+        if (configPart == "True") {
+            //skip this one and add to config list for customer to remove or keep
+            configParts.push({
+                DkPartNumber: $(this).parent().parent().parent().find(".cart-partNumber span").text(),
+                ManufacturerPartNumber: mfpn,
+                ManufacturerName: mfname,
+                Description: desc,
+                ImageUrl: img
+            });
+        }
+        else if (!existInSavedList){
+            var newSavedPart = {
+                dkpn: dkpn,
+                dklink: dklink,
+                mfpn: mfpn,
+                mfname: mfname,
+                desc: desc,
+                img: img,
+                qty: qty,
+                cref: cref
+            };
+            newSavedParts.push(newSavedPart);
+        }
+    }).promise().done(function () {
+        if (configParts.length > 0)
+            ConfigurablePartSaveForLaterRemoval(configParts, newSavedParts);
+        else
+            SaveAndRemoveSaveForLaterParts(newSavedParts);
+    });
+}
+
+function SaveAndRemoveSaveForLaterParts(newSavedParts = [], removeConfig = false) {
+    var selected = [];
+    //if S4L and remove config = delete
+    //if S4L and No remove config = remove all but config
+    $("#cartDetails input:checkbox:checked").each(function () {
+        var flagConfig = $(this).parent().parent().find(".FlagConfig").val();
+        var configPart = false;
+        if (flagConfig != undefined) {
+            configPart = "True" == flagConfig;
+        }
+
+        if ($(this).attr('class') != 'chkSelectAll dk-checkbox'
+            && (removeConfig || (!removeConfig && !configPart)))
+        {
+            selected.push($(this).attr('id').replace('chkDelete', ''));
+        }
+    });
+
+    //saves only savable parts and updates saved list
+    if (newSavedParts.length > 0) {
+        savedParts = savedParts.concat(newSavedParts);
+        localStorage.setItem("savedParts", JSON.stringify(savedParts));
+        newSavedParts.forEach(renderSavedParts);
+    }
+    //deletes savable and non savable parts
+    if (selected.length > 0) {
+        DeletePart(selected, "SavedForLater");
+    }
+}
+
+function ConfigurablePartSaveForLaterRemoval(configPartList = [], newSavedParts = []) {
+    //populate pop up with config list is length > 0
+    if (configPartList.length > 0) {
+        var url = "/ordering/ShoppingCart/ShoppingCart/GetConfigSaveForLaterList";
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { configList: configPartList},
+            success: function (returnData) {
+                var cleanData = DOMPurify.sanitize(returnData, { USE_PROFILES: { html: true } });
+                CreateSaveForLaterErrorModal();
+
+                $("#dialog-save-for-later-error #contentholder")[0].innerHTML = cleanData;
+                $("#dialog-save-for-later-error .dk-modal__title").text($('#PopupTitle').val());
+
+                $("#dialog-save-for-later-error span[data-button='secondary']").text($('#BasePopupRemoveButtonText').val()).on("click", function () {
+                    //remove config and S4L parts
+                    ClearSaveForLaterErrorModal();
+                    SaveAndRemoveSaveForLaterParts(newSavedParts, true);
+
+                });
+                $("#dialog-save-for-later-error span[data-button='primary']").text($('#BasePopupLeaveButtonText').val()).on("click", function () {
+                    //keep config parts and remove S4L parts
+                    ClearSaveForLaterErrorModal();
+                    SaveAndRemoveSaveForLaterParts(newSavedParts);
+                });
+
+                dk.modal("#dialog-save-for-later-error").show();
+            },
+            error: function (req, status, error) {
+                genericErrorModal();
+            }
+        });
+    }
+    else {
+        //no config parts just remove parts and save
+        SaveAndRemoveSaveForLaterParts(newSavedParts);
+    }
+}
+
+function CreateSaveForLaterErrorModal() {
+    var leaveText = $("#button-text-leave").val();
+    var removeText = $("#button-text-remove").val();
+    $("#dialog-save-for-later-error-wrapper").html(`
+                    <aside id='dialog-save-for-later-error' class="dk-modal" role="dialog" aria-model="true" aria-hidden="true">
+                        <header class="dk-modal__title">
+                        </header>
+                        <section class="dk-modal__content">
+                            <div id="contentholder"></div>
+                        </section>
+                        <footer class="dk-modal__footer">
+                            <span id="primary-leave" data-modal-dismiss="true" data-button="primary" class="dk-btn__primary">${leaveText}</span>
+                            <span id="secondary-remove" data-modal-dismiss="true" data-button="secondary" class="dk-btn__secondary">${removeText}</span>
+                        </footer>
+                        <span title="Close Message"
+                                class="dk-modal__close"
+                                data-button="close"
+                                data-modal-dismiss="true">
+                        </span>
+                    </aside>
+                `);
+    $("#dialog-save-for-later-error .dk-modal__close, #dialog-save-for-later-error .dk-btn__primary").on("click",
+        function() {
+            dk.modal("#dialog-save-for-later-error").hide();
+        });
+}
+
+function ClearSaveForLaterErrorModal() {
+    dk.modal("#dialog-save-for-later-error").hide();
+    $("#dialog-save-for-later-error-wrapper").html("");
+}
+
+function renderSavedParts(item, index, arr) {
+    var addToCartText = $("#btnAddToCart").text();
+    var deleteText = $("#deleteButton").text();
+
+    $(".saveForLaterOverflow").prepend(`
+        <div class="savedPartsCard" id="${item.dkpn}">
+            <img src="${item.img}" />
+            <div>
+                <a href="${item.dklink}" class="dk-link">
+                    ${item.dkpn}
+                </a>
+                <span>${item.mfpn}</span>
+                <span>${item.mfname}</span>
+                <span>${item.desc}</span>
+                <span class="addFromSavedParts dk-btn__primary dk-btn--sm" id="addFromSavedParts" data-gtm='{"click_text":"Add Part","add_part_method":"Saved for Later"}' onclick="javascript:addSavedPartsToCart('${
+        item.dkpn}', '${item.qty}', '${item.cref}')">${addToCartText}</span>
+                <span class="removeFromSavedParts dk-btn__secondary dk-btn--sm" onclick="javascript:GTMShoppingcartClick('Remove Saved Part'); javascript:removeSavedParts('${
+        item.dkpn}');">${deleteText}</span>
+            <div>
+        </div>
+    `);
+}
+
+if (savedParts.length > 0) {
+    $("#divSaveForLater").show();
+    savedParts.forEach(renderSavedParts);
+}
+
+function removeSavedParts(partNumber) {
+    savedParts = savedParts.filter(function (obj) {
+        return obj.dkpn !== partNumber;
+    });
+    $(".saveForLaterOverflow").html("");
+    if (savedParts.length > 0) {
+        savedParts.forEach(renderSavedParts);
+    } else {
+        $("#divSaveForLater").hide();
+    }
+    localStorage.setItem("savedParts", JSON.stringify(savedParts));
+}
+
+function addSavedPartsToCart(partNumber, partQuantity, partCref) {
+    $(".addPart_qty input").val(partQuantity);
+    $(".addPart_number input").val(partNumber);
+    $(".addPart_cref input").val(partCref);
+    var sourceElem = $(".addFromSavedParts");
+    AddToCart(sourceElem);
+    removeSavedParts(partNumber);
+}
+
+
+// This will get called from a callback function in analytics
+function fastAddAnalytics() {
+    try {
+        var gtmVal = { "click_text": "Add to Cart - File Upload", "add_part_method": "File Upload" };
+        const items = GetGTMTagDetails('.GTMDetailTag2');
+
+        if (items.length > 0) {
+            GTMAddRemoveToCart(gtmVal, items);
+        }
+    }
+    catch (e) {
+        // don't let analytics break the page
+    };
+};
+
+function processAddPartsResponse(data, addedFrom, returnObj, sourceElem) {
+    if (data.BaseSuccess == true) {
+        var parts;
+        var partsAdded = false;
+
+        //for GTM
+        var items = {};
+        var index = 0;
+
+        var gtmVal = $(sourceElem).data('gtm');
+        if (gtmVal === undefined) {
+            switch (addedFrom) {
+                case "manualEntry":
+                    gtmVal = {
+                        "add_part_method": "Manual Add Part",
+                        "click_text": "Add to Cart"
+                    }
+                    break;
+                case "importParts":
+                    gtmVal = {
+                        "add_part_method": "Add Part List",
+                        "click_text": "Add to Cart"
+                    }
+                    break;
+                case "updateErrorParts":
+                    gtmVal = {
+                        "add_part_method": "Error Correction",
+                        "click_text": "Add to Cart"
+                    }
+                    break;
+                default:
+                    gtmVal = {
+                        "add_part_method": "",
+                        "click_text": "Add to Cart"
+                    }
+            }
+        }
+
+        if (data.DetailResponses !== undefined) {
+            parts = data.DetailResponses;
+        }
+        else {
+            parts = data;
+        }
+
+        if (parts.BaseSuccess == true) {
+            $('.divDelayedContainer').hide();
+            $("#ekom-message").addClass("hidden");
+            $.each(parts.partResults, function () {
+
+                if (this.ReturnValue == 1) {  // 1 == Success
+                    returnObj.successesExist = true;
+                    returnObj.successIndices += GetRowNumberOnView(this.RequestSeq) + "|";
+
+                    try {
+                        //GTM
+                        detailTag = $.parseJSON(this.GTMDetailTag);
+                        items[index] = detailTag;
+                        index++;
+                    }
+                    catch (e) {
+                        // don't let analytics break the page
+                    }
+                    partsAdded = true;
+                }
+                else if (this.ReturnValue == 2) { // 2 == SuccessWithWarning
+                    returnObj.successesExist = true;
+                    returnObj.warnings += "\n\nPart: " + this.detail.partNumber + "\nWarnings: " + JSON.stringify(this.warnings) + "\nRequestSeq: " + this.RequestSeq + "\nReturnValue: " + this.ReturnValue + "\nValidPartOptions: " + this.ValidPartOptions;
+                    try {
+                        //GTM
+                        detailTag = $.parseJSON(this.GTMDetailTag);
+                        items[index] = detailTag;
+                        index++;
+                    }
+                    catch (e) {
+                        // don't let analytics break the page
+                    }
+                    partsAdded = true;
+
+                    // delayed date was removed
+                    if (this.Warnings.indexOf(2) > -1) {
+                        $(".date-textbox").first().val("");
+                        $('.divDelayedContainer').show();
+                        $('.divOrderDelayed').hide();
+                    }
+                }
+                else if (this.ReturnValue == 3) {  // 3 == Failure
+                    returnObj.failuresExist = true;
+
+                    if (this.ErrorCode == 134318266 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // PART_NOT_FOUND
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+                    }
+                    else if (this.ErrorCode == 22 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // PART_NOT_FOUND
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+                    }
+                    // MP_NO_AVAILABLE_OFFER
+                    else if (this.ErrorCode == 134318630 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+                    }
+                    else if (this.ErrorCode == 134317002 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // FOR_PART_ERROR (denied by currency)
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+                    }
+                    else if ((this.ErrorCode == 134318274 || this.ErrorCode == 134319634 || this.ErrorCode == 134317234 ||
+                        this.ErrorCode == 134317242 || this.ErrorCode == 134318282 || this.ErrorCode == 134320186) &&
+                        (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // Restrictions
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+                    }
+                    else if (this.ErrorCode == 134319162 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // Duplicate Manufacturer
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').html(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').show();
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').parent().parent().show();
+                    }
+                    else if (this.ErrorCode == 10 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // 10 == packtype/upsell
+                        createPackTypeUpsellPopup(this, this.detail.optionalItemSeq > 0);
+                    }
+                    else if ((this.ErrorCode == 1 || this.ErrorCode == 2 || this.ErrorCode == 3 || this.ErrorCode == 7 || this.ErrorCode == 8 || this.ErrorCode == 9 || this.ErrorCode == 12 || this.ErrorCode == 14 || this.ErrorCode == 16 || this.ErrorCode == 19 || this.ErrorCode == 20 || this.ErrorCode == 25 || this.ErrorCode == 26 || this.ErrorCode == 27) && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // 1 == Maximum quantity exceeded
+                        // 2 == Minimum quantity not met
+                        // 3 == Multiple of min quantity not met
+                        // 7 == Obsolete, no remaining stock (with subs)
+                        // 8 == No BO allowed, but have partial stock
+                        // 9 == Obsolete, but have partial stock
+                        // 12 == Pending Conversion Non-Stock
+                        // 14 == Discontinued, no remaining stock (with subs)
+                        // 16 == Chip Outpost No Backorders Partial Stock
+                        // 19 == Discontinued, but have partial stock
+                        // 25 == Market place, no remaining stock
+                        // 26 == Market place, but have partial stock
+                        // 27 == Obsolete, Non-Stock but has vendor_quantity_on_order
+                        if (this.ValidPartOptions != "" || this.ErrorCode == 25) {
+                            if (this.detail.optionalItemSeq != 0) {
+                                createSuggestionsPopup(this, true);
+                            }
+                            else {
+                                createSuggestionsPopup(this, false);
+                            }
+                        }
+                    }
+                    else if (this.ErrorCode == 134317562 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // MAX_ORDER_QUANTITY
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').addClass("input-validation-error");
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().find('.field-validation-error').show();
+
+                    }
+                    else if (this.ErrorCode == 21 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        returnObj.successesExist = false;
+                        returnObj.successIndices = '';
+                        createMultipleCRefPopup(this, addedFrom);
+                    }
+                    else if ((this.ErrorCode == 4 || this.ErrorCode == 5 || this.ErrorCode == 6 || this.ErrorCode == 13 || this.ErrorCode == 15 || this.ErrorCode == 18 || this.ErrorCode == 23) &&
+                        (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // 4 == Backorders not allowed, no stock
+                        // 5 == Product not available
+                        // 6 == Obsolete, no remaining stock (and no subs)
+                        // 13 == Discontinued, no remaining stock (and no subs)
+                        // 15 == Punchout doesn't like the part.
+                        // 18 == Invalid Customer Reference
+                        // 23 == Restrict MP parts for order models (Employee, First Robotics, Tradeshow)
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').text(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').show();
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').parent().parent().show();
+                    }
+                    else if (this.ErrorCode == 11 && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // 11 == packtype/upsell error
+                        genericErrorModal();
+                    }
+                    else if (this.ErrorCode == 134318570) {
+                        // server unavailable
+                        errorModal(this.ErrorCode, this.ErrorMessage, this.ErrorMessage);
+                    }
+                    else if ((this.ErrorCode == 24 || this.ErrorCode == 28) && (addedFrom == "manualEntry" || addedFrom == "search")) {
+                        // 24 == configurable_not_available
+                        // 28 == config_file_but_not_configurable
+                        genericErrorModal(this.ErrorMessage);
+                    }
+                    else if (this.ErrorCode == 134316539) {
+                        // CONFIGURABLE_NOT_ALLOWED
+                        var SeqNum = GetRowNumberOnView(this.RequestSeq);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').html(this.ErrorMessage);
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').show();
+                        $('#parts_' + SeqNum + '__partNumber').parent().parent().parent().parent().find('.detail-error-message').parent().parent().show();
+                    }
+                    else {
+                        returnObj.errors += "\n\nPart: " + this.detail.partNumber + "\nErrorCode: " + this.ErrorCode + "\nRequestSeq: " + this.RequestSeq + "\nReturnValue: " + this.ReturnValue + "\nValidPartOptions: " + this.ValidPartOptions;
+                    }
+                }
+            });
+            if (partsAdded) {
+                $("#divShowRestrictionTypeMessage").hide();
+                try {
+                    //GTM tag Add Part
+                    GTMAddRemoveToCart(gtmVal, items);
+                }
+                catch (e) {
+                    // don't let analytics break the page
+                }
+            }
+        }
+        else {
+            returnObj.successesExist = false;
+            returnObj.failuresExist = true;
+            returnObj.errors = parts.BaseErrorMessage;
+        }
+    }
+}
+
+function createSuggestionsModal(valueCalc = false) {
+    var addText = $("#button-text-add").val();
+    var cancelText = $("#button-text-cancel").val();
+
+    if (valueCalc.toLowerCase() == "true") //Separate Value Calculator
+    {
+        $("#dialog-suggestions-wrapper").html(`
+        <aside id='dialog-suggestions' class="dk-modal" role="dialog" aria-model="true" aria-hidden="true">
+            <header class="dk-modal__title">
+            </header>
+            <section class="dk-modal__content">
+                <div id="contentholder"></div>
+            </section>
+            <footer class="dk-modal__footer">
+                <span id="primary-add" data-modal-dismiss="true" data-button="primary" class="dk-btn__primary">${addText}</span>
+            </footer>
+        </aside>
+        `);
+        $("#dialog-suggestions .dk-modal__close, #dialog-suggestions .dk-btn__primary").on("click", function () {
+            dk.modal("#dialog-suggestions").hide();
+        })
+    }
+    else
+    {
+        $("#dialog-suggestions-wrapper").html(`
+        <aside id='dialog-suggestions' class="dk-modal" role="dialog" aria-model="true" aria-hidden="true">
+            <header class="dk-modal__title">
+            </header>
+            <section class="dk-modal__content">
+                <div id="contentholder"></div>
+            </section>
+            <footer class="dk-modal__footer">
+                <span id="primary-add" data-modal-dismiss="true" data-button="primary" class="dk-btn__primary">${addText}</span>
+                <span id="secondary-cancel" data-modal-dismiss="true" data-button="secondary" class="dk-btn__secondary">${cancelText}</span>
+            </footer>
+            <span title="Close Message" class="dk-modal__close" data-button="close" data-modal-dismiss="true"></span>
+        </aside>
+        `);
+        $("#dialog-suggestions .dk-modal__close, #dialog-suggestions .dk-btn__primary").on("click", function () {
+            dk.modal("#dialog-suggestions").hide();
+        })
+    }
+
+}
+
+function clearSuggestionsModal() {
+    dk.modal("#dialog-suggestions").hide();
+    $("#dialog-suggestions-wrapper").html("");
+}
+
+function createSuggestionsPopup(partResult, isUpdate, originalQuanElem) {
+    var originalQty = $(originalQuanElem).data('val');
+    var url = "/ordering/ShoppingCart/ShoppingCart/GetSuggestions";
+    var itemSeq = partResult.detail.optionalItemSeq;
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { partResult: partResult },
+        success: function (returnData) {
+            let cleanData = DOMPurify.sanitize(returnData, { USE_PROFILES: { html: true } });
+            createSuggestionsModal($($.parseHTML(cleanData)).filter('#isValueCalculator').val());
+            $("#dialog-suggestions #contentholder")[0].innerHTML = cleanData;
+            $("#dialog-suggestions .dk-modal__title").text($('#popupTitle').val());
+            if (partResult.ErrorCode == 25) {
+                $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupOkButtonText').val()).on("click", function () {
+                    clearSuggestionsModal()
+                });
+                $("#dialog-suggestions span[data-button='secondary']").hide();
+            }
+            else {
+                // update quantity via dialog
+                if (isUpdate) {
+                    //add the content and buttons
+                    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupUpdateButtonText').val()).on("click", function () {
+                        var qty = 0;
+                        $("#dialog-suggestions input:radio:checked").each(function () {
+                            var index = this.id.replace('suggestion', '');
+                            qty = $("#validOptions_" + index + "__quantity")[0].value;
+                        });
+
+                        // get the quantity elem for the original attempted update and set it to qty
+                        $('#qty' + itemSeq, parent.document).val(qty);
+                        // call UpdateQty passing it the elem
+                        updateQuantity($('#qty' + itemSeq)[0], false);
+
+                        clearSuggestionsModal()
+                    });
+                    $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+                        if (originalQuanElem != undefined) {
+                            originalQuanElem.value = originalQty;
+                            $(originalQuanElem).data('val', originalQty)
+                        }
+                        clearSuggestionsModal()
+                    });
+                    $("#dialog-suggestions span[data-button='close'], #auto-modal-mask").on("click", function () {
+                        if (originalQuanElem != undefined) {
+                            originalQuanElem.value = originalQty;
+                            $(originalQuanElem).data('val', originalQty)
+                        }
+                        clearSuggestionsModal()
+                    })
+                }
+                // add part via popup
+                else {
+                    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupAddButtonText').val()).on("click", function () {
+                        var parts = [];
+                        $("#dialog-suggestions input:radio:checked").each(function () {
+                            var index = this.id.replace('suggestion', '');
+                            var obj = { quantity: $("#validOptions_" + index + "__quantity")[0].value, partNumber: $("#validOptions_" + index + "__partNumber")[0].value, cRef: $("#validOptions_" + index + "__cRef")[0].value }
+                            parts.push(obj);
+                        });
+
+                        if (parts.length > 0) {
+                            var addedFrom = "manualEntry";
+                            $.ajax({
+                                url: "/ordering/shoppingcart/shoppingcart/AddParts",
+                                type: "POST",
+                                data: { details: parts, overrideUpsell: false },
+                                success: function (data) {
+                                    if (data.BaseSuccess == true) {
+                                        var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+                                        processAddPartsResponse(data, addedFrom, returnObj);
+                                        if (!returnObj.failuresExist) {
+                                            refreshPage(addedFrom, returnObj);
+                                            $('.AddPart').val('');
+                                        }
+                                    }
+                                    else {
+                                        errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                                    }
+                                },
+                                error: function (xhr, textStatus, errorThrown) {
+                                    genericErrorModal();
+                                }
+                            });
+                        }
+                        clearSuggestionsModal()
+                    });
+                    $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+                        clearSuggestionsModal()
+                    });
+                }
+                if (partResult.ErrorCode == 26) {
+                    $("#radio").hide();
+                    $("#radioColumn").hide();
+                }
+                if (partResult.ErrorCode == 27) {
+                    $("#purchaselb").removeClass("hidden");
+                    $("#validOptionslb").hide();
+                    $("#radio").hide();
+                    $("#radioColumn").hide();
+                }
+                $("#dialog-suggestions input:radio:first").attr('checked', true);
+            }
+            dk.modal("#dialog-suggestions").show();
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+}
+
+function createMultipleCRefPopup(partResult, addedFrom) {
+    var url = "/ordering/ShoppingCart/ShoppingCart/GetSuggestions";
+    (function (addedFrom) {
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { partResult: partResult },
+            //contentType: 'application/json',
+            success: function (returnData) {
+                let cleanData = DOMPurify.sanitize(returnData, { USE_PROFILES: { html: true } });
+                //add the content and buttons
+                createSuggestionsModal($($.parseHTML(cleanData)).filter('#isValueCalculator').val());
+                $('#primary-add').attr("track-data", "ref_page_event=Multiple Matches Add");
+                $('#secondary-cancel').attr("track-data", "ref_page_event=Multiple Matches Skip");
+                $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupAddButtonText').val()).on("click", function () {
+                    GTMShoppingcartClick('Multiple Matches Add');
+
+                    if ($('input[name=suggestions]:checked')[0].id == 'rdoNewRef' && $('#txtNewRef').val().trim() == '') {
+                        $('#newRefRequiredMessage').show();
+                        $('#txtNewRef').addClass('input-validation-error');
+                        return false;
+                    }
+                    else {
+                        var parts = [];
+                        $("#dialog-suggestions input:radio:checked").each(function () {
+                            var index = this.id.replace('suggestion', '');
+                            var obj;
+                            if (index == "rdoNewRef") {
+                                obj = { quantity: $("#originalRequestedPart_quantity")[0].value, partNumber: $("#originalRequestedPart_partNumber")[0].value, cRef: $("#txtNewRef")[0].value }
+                            }
+                            else {
+                                obj = { quantity: $("#validOptions_" + index + "__quantity")[0].value, partNumber: $("#validOptions_" + index + "__partNumber")[0].value, cRef: $("#validOptions_" + index + "__cRef")[0].value }
+                            }
+                            parts.push(obj);
+                        });
+
+                        if (parts.length > 0) {
+                            $.ajax({
+                                url: "/ordering/shoppingcart/shoppingcart/AddParts",
+                                type: "POST",
+                                data: { details: parts, overrideUpsell: false },
+                                success: function (data) {
+                                    if (data.BaseSuccess == true) {
+                                        var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+                                        processAddPartsResponse(data, addedFrom, returnObj);
+                                        if (!returnObj.failuresExist) {
+                                            if (addedFrom == "search") {
+                                                window.location.replace("shoppingcart");
+                                            } else {
+                                                refreshPage("manualEntry", returnObj);
+                                                $('.AddPart').val('');
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                                    }
+                                },
+                                error: function (xhr, textStatus, errorThrown) {
+                                    genericErrorModal();
+                                }
+                            });
+                        }
+                    }
+                    clearSuggestionsModal()
+                });
+                $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupSkipButtonText').val()).on("click", function () {
+                    GTMShoppingcartClick('Multiple Matches Skip');
+
+                    var parts = [];
+                    var obj = { quantity: $("#originalRequestedPart_quantity")[0].value, partNumber: $("#originalRequestedPart_partNumber")[0].value, cRef: "" };
+                    parts.push(obj);
+
+                    //var addedFrom = "manualEntry";
+                    $.ajax({
+                        url: "/ordering/shoppingcart/shoppingcart/AddParts",
+                        type: "POST",
+                        //contentType: 'application/json',
+                        data: { details: parts, overrideUpsell: false, overrideCustRefLookup: true },
+                        success: function (data) {
+                            if (data.BaseSuccess == true) {
+                                var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+                                processAddPartsResponse(data, addedFrom, returnObj);
+                                if (!returnObj.failuresExist) {
+                                    if (addedFrom == "search") {
+                                        window.location.replace("shoppingcart");
+                                    } else {
+                                        refreshPage("manualEntry", returnObj);
+                                        $('.AddPart').val('');
+                                        //$('#parts_0__quantity').focus();
+                                    }
+                                }
+                            }
+                            else {
+                                errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                            }
+                        },
+                        error: function (xhr, textStatus, errorThrown) {
+                            genericErrorModal();
+                        }
+                    });
+                    clearSuggestionsModal()
+
+                });
+
+                $("#dialog-suggestions #contentholder")[0].innerHTML = cleanData;
+                $("#dialog-suggestions .dk-modal__title").text($('#popupTitle').val());
+                dk.modal("#dialog-suggestions").show();
+
+                $("#dialog-suggestions input:radio:first").attr('checked', true);
+
+                $('input[name=suggestions]').change(function () {
+                    if ($('input[name=suggestions]:checked').attr("id") != 'rdoNewRef') {
+                        $('#newRefRequiredMessage').hide();
+                        $('#txtNewRef').removeClass('input-validation-error');
+                        $('#txtNewRef')[0].value = '';
+                    }
+                });
+
+                $('#txtNewRef').change(function () {
+                    if ($('#txtNewRef').val().trim() != '') {
+                        $('#newRefRequiredMessage').hide();
+                        $('#txtNewRef').removeClass('input-validation-error');
+                    }
+                });
+
+                $('#txtNewRef').focusin(function () {
+                    $("#rdoNewRef").prop("checked", true);
+                });
+            },
+            error: function (req, status, error) {
+                genericErrorModal();
+            }
+        });
+    })(addedFrom);
+}
+
+function showHideUpsellSubOptions() {
+    if ($("#disableValueCalc").prop('checked')) {
+        $('.subOptionUpsellRow').hide("slow");
+
+        var reset = false;
+        try {
+            var radioButtons = $("input:radio[name='subOptions']");
+            reset = radioButtons[2].checked || radioButtons[3].checked;
+        }
+        catch (e) { }
+
+        if (reset) {
+            radioButtons[0].click();
+        }
+    }
+    else {
+        $('.subOptionUpsellRow').show("slow");
+    }
+}
+
+function setUrlOrdering() {
+    var queryString = window.location.search;
+    var baseUrl = window.location.origin + window.location.pathname;
+    if (queryString.length > 0 && queryString.includes("source=search")) {
+        window.history.replaceState(
+            {},
+            '',
+            baseUrl
+        );
+    }
+}
+
+function createPackTypeUpsellPopup(partResult, isUpdate, originalQuanElem) {
+    var originalQty = $(originalQuanElem).data('val');
+    var itemSeq = partResult.detail.optionalItemSeq;
+    var originalPartId = partResult.detail.partId;
+    var originalPartQty = partResult.detail.quantity;
+    var url = "/ordering/ShoppingCart/ShoppingCart/GetPackTypeUpsell";
+    var chkDisableValueCalc = "<div class='disableValueCalcDiv dk-checkbox-group' id='disableValueCalcDiv'><input id='disableValueCalc' class='dk-checkbox' type='checkbox' onclick='showHideUpsellSubOptions();' /><label class='dk-checkbox-label' for='disableValueCalc'>" + $('#DisableValueCalcText').val() + "</label></div>"
+
+    var itemPackType = partResult.PackTypeUpsellOption.PackagingCase;
+    var modalTitle = "";
+    switch (itemPackType) {
+        case 1:
+            // Packaging Changed
+            modalTitle = "Packaging Changed";
+            break;
+        case 2:
+        case 3:
+        case 4:
+            // Quantity Unavailable
+            modalTitle = "Quantity Unavailable";
+            break;
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+            // VALUE CAL MODAL
+            modalTitle = "Value Calculator";
+            break;
+        default:
+            // NONE
+            modalTitle = "";
+            break;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { partResult: partResult, isUpdate: isUpdate },
+        success: function (returnData) {
+            let cleanData = DOMPurify.sanitize(returnData, { USE_PROFILES: { html: true } });
+            if (cleanData == true) {
+                refreshPage('manualEntry', null);
+                setUrlOrdering();
+            }
+            else if (cleanData == false) {
+                genericErrorModal();
+                setUrlOrdering();
+            }
+            else {
+                createSuggestionsModal($($.parseHTML(cleanData)).filter('#isValueCalculator').val());
+                GTMValueCalcModalOpen(modalTitle);
+                setUrlOrdering();
+                $("#dialog-suggestions #contentholder")[0].innerHTML = cleanData;
+
+                if (isUpdate) {
+                    //add the content and buttons
+                    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupUpdateButtonText').val()).on("click", function () {
+                        var subOptionsSelected = $("#dialog-suggestions input:radio[name='subOptions']:checked").val();
+                        var selectedRadioId = $("#dialog-suggestions input:radio[name='suggestions']:checked").attr('id').replace('suggestion', '');
+                        var selectedPartId = $('#validOptions_' + selectedRadioId + '__partId').val();
+
+                        // Update Original Part Qty
+                        if (selectedPartId == originalPartId) {
+                            var qty = $("#validOptions_" + selectedRadioId + "__quantity")[0].value;
+
+                            // get the quantity elem for the original attempted update and set it to qty
+                            $('#qty' + itemSeq, parent.document).val(qty);
+
+                            if (originalPartQty == qty) {
+                                GTMValueCalcAdd(modalTitle, "Original Quantity");
+                            } else {
+                                GTMValueCalcAdd(modalTitle, "Suggested Quantity");
+                            }
+
+                            updateQuantity($('#qty' + itemSeq)[0], true);
+                            
+                        }
+                        else {
+                            // Remove Original Part
+                            var selected = [];
+                            selected.push(itemSeq)
+                            DeletePart(selected);
+
+                            GTMValueCalcAdd(modalTitle, "Suggested Quantity");
+                        }
+
+                        if (subOptionsSelected || (selectedPartId != originalPartId)) {
+                            // Add New Parts
+                            AddPackTypeUpsellToCart(this, true, originalPartId, originalQty)
+                        }
+                        clearSuggestionsModal()
+                    });
+                    $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+                        if (originalQuanElem != undefined) {
+                            originalQuanElem.value = originalQty;
+                            $(originalQuanElem).data('val', originalQty)
+                        }
+                        GTMValueCalcCancel(modalTitle);
+                        clearSuggestionsModal()
+                    });
+
+                    $("#dialog-suggestions span[data-button='close'], #auto-modal-mask").on("click", function () {
+                        // close function
+                        if (originalQuanElem != undefined) {
+                            originalQuanElem.value = originalQty;
+                            $(originalQuanElem).data('val', originalQty)
+                        }
+                        GTMValueCalcCancel(modalTitle);
+                        clearSuggestionsModal();
+                    });
+                }
+                // add part via popup
+                else {
+                    //add the content and buttons
+                    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupAddButtonText').val()).on("click", function () {
+
+                        AddPackTypeUpsellToCart(this, false);
+
+                        //analytics tagging, couldn't find an easy way to not have this element get repeated
+                        var selectedRadioId = $("#dialog-suggestions input:radio[name='suggestions']:checked").attr('id').replace('suggestion', '');
+                        var selectedPartId = $('#validOptions_' + selectedRadioId + '__partId').val();
+                        var qty = $("#validOptions_" + selectedRadioId + "__quantity")[0].value;
+
+                        if (selectedPartId == originalPartId) {
+                            if (originalPartQty == qty) {
+                                GTMValueCalcAdd(modalTitle, "Original Quantity");
+                            } else {
+                                GTMValueCalcAdd(modalTitle, "Suggested Quantity");
+                            }
+                        } else {
+                            GTMValueCalcAdd(modalTitle, "Suggested Quantity");
+                        }
+                        clearSuggestionsModal()
+                    });
+                    $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+                        GTMValueCalcCancel(modalTitle);
+                        clearSuggestionsModal()
+                    });
+
+                    // add 'disable value calculator' checkbox next to buttons
+                    if (!($("#dialog-suggestions").parent().find(".disableValueCalcDiv").length) && ($('#valueCalcDisabled').val().toLowerCase() == 'false') && ($('#hasUpsell').val().toLowerCase() == 'true')) {
+                        $("#dialog-suggestions").parent().find(".dk-modal__footer").append(chkDisableValueCalc);
+                    }
+
+                    $("#dialog-suggestions span[data-button='close'], #auto-modal-mask").on("click", function () {
+                        // close function
+                        $("#disableValueCalc").attr('checked', false);
+                        $('#disableValueCalcDiv').remove();
+                        GTMValueCalcCancel(modalTitle);
+                        clearSuggestionsModal()
+                    })
+
+                }
+
+                $("input:radio[id='suggestion1']").on("click", function () {
+                    $("input:radio[name='subOptions']").removeAttr("checked");
+                    $("input:radio[name='subOptions']").attr("disabled", "true");
+                });
+
+                $("input:radio[id='suggestion0']").change(function () {
+                    if (this.checked) {
+                        $("input:radio[name='subOptions']").removeAttr("disabled");
+                        $("input:radio[name='subOptions']").first().prop("checked", true);
+                    }
+                });
+
+                $("#dialog-suggestions .dk-modal__title").text($('#popupTitle').val());
+                dk.modal("#dialog-suggestions").show();
+                $("input:radio[name='suggestions']").first().prop("checked", true);
+
+                if ($("#originalRequestedPartIsDkr").val() == "True") {
+                    $("#suggestion01").prop("checked", true);
+                }
+                else {
+                    $("input:radio[name='subOptions']").first().prop("checked", true);
+                }
+            }
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+            setUrlOrdering();
+        }
+    });
+}
+
+function GetRowNumberOnView(seqNum) {
+    var blankRowCount = 0;
+    var nonBlankRowCount = 0;
+    var rowCount = $(".trManualEntry").length;
+
+    for (i = 0; i < rowCount; i++) {
+        if ($('#parts_' + i + '__partNumber').val().trim() == '') {
+            blankRowCount++;
+        }
+        else {
+            nonBlankRowCount++;
+        }
+
+        if (nonBlankRowCount == seqNum + 1) {
+            return seqNum + blankRowCount;
+        }
+    }
+    return seqNum;
+}
+
+// loading spinner whenever ajax is running
+function ajaxLoading() {
+    $(document)
+        .ajaxStart(function () {
+            startSpinner();
+            ajaxTimeout();
+        })
+        .ajaxStop(function () {
+            $('#loadingDiv').remove();
+            $("#content").css("opacity", "1");
+            ajaxTimeoutStop();
+        });
+}
+
+var timeoutVar;
+
+function ajaxTimeout() {
+    timeoutVar = setTimeout(function () {
+        $('#loadingDiv').remove();
+        $('#fakeLoadingDiv').remove();
+        $("#ajaxFail").dialog({
+            buttons: [{
+                text: "OK",
+                click: function () {
+                    window.location.reload();
+                }
+            }]
+        });
+    }, 30000);
+}
+
+function ajaxTimeoutStop() {
+    clearTimeout(timeoutVar);
+}
+
+$(document).ready(function () {
+    ajaxLoading();
+});
+
+function AddToCart(sourceElem) {
+    $(".btnAddToCart").addClass("disabled");  // Must do this to prevent holding the enter key on the button which will submit adding the part multiple times.
+    ValidateManualEntry();
+    if ($("#mainForm").valid()) {
+        var parts = [];
+        $('.trManualEntry').each(function (tr) {
+            var strQuantity = '#parts_' + tr + '__quantity';
+            var strPartNumber = '#parts_' + tr + '__partNumber';
+            var strCRef = '#parts_' + tr + '__cRef';
+            var q1 = $(strQuantity).val();
+            var p1 = $(strPartNumber).val();
+            var c1 = $(strCRef).val();
+            var obj = { quantity: q1, partNumber: p1, cRef: c1 };
+            parts.push(obj);
+        });
+        var addedFrom = "manualEntry";
+        $.ajax({
+            url: "/ordering/shoppingcart/shoppingcart/AddParts",
+            type: "POST",
+            //contentType: 'application/json',
+            data: { details: parts, overrideUpsell: false },
+            success: function (data) {
+                var returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+
+                if (data.BaseSuccess == true) {
+                    processAddPartsResponse(data, addedFrom, returnObj, sourceElem);
+
+                    if (!returnObj.failuresExist) {
+                        refreshPage(addedFrom, returnObj);
+                        $('.AddPart').val('');
+                        $('#parts_0__quantity').focus();
+                    }
+                    else {
+                        if (returnObj.successIndices != "") {
+                            $.each(returnObj.successIndices.split('|'), function () {
+                                //parts_0__quantity
+                                $('#parts_' + this.toString() + '__quantity').val('');
+                                $('#parts_' + this.toString() + '__partNumber').val('');
+                                $('#parts_' + this.toString() + '__cRef').val('');
+                            });
+                            refreshParts(addedFrom, returnObj);
+                        }
+
+                        if (returnObj.errors.length > 0) {
+                            refreshPage(addedFrom, returnObj);
+                            errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, 'errors:' + returnObj.errors + '\n\n\nwarnings:' + returnObj.warnings)
+                        }
+                    }
+                }
+                else {
+                    if (data.BaseRedirectUrl != "") {
+                        window.location.replace(data.BaseRedirectUrl);
+                    }
+                    else {
+                        errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                    }
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                genericErrorModal();
+            }
+        });
+    }
+}
+
+function ValidateManualEntry() {
+    var customerId = $('#BaseCustomerID').val();
+
+    RemoveManualEntryValidation();
+
+    $('.trManualEntry').each(function (tr) {
+        var strQuantity = 'parts_' + tr + '__quantity';
+        var strPartNumber = 'parts_' + tr + '__partNumber';
+        var strCRef = 'parts_' + tr + '__cRef';
+
+        var q1 = $('#' + strQuantity).val();
+        var p1 = $('#' + strPartNumber).val();
+        var c1 = $('#' + strCRef).val();
+
+        if (customerId == 0) {
+            if (q1.length > 0) {
+                AddRequiredValidator(strPartNumber);
+            }
+            if (p1.length > 0) {
+                AddRequiredValidator(strQuantity);
+            }
+            if (c1.length > 0) {
+                AddRequiredValidator(strQuantity);
+                AddRequiredValidator(strPartNumber);
+            }
+        }
+        else {
+            if (p1.length > 0 || c1.length > 0) {
+                AddRequiredValidator(strQuantity);
+            }
+
+            if (q1.length > 0 && c1.length == 0) {
+                AddRequiredValidator(strPartNumber);
+            }
+            if (q1.length > 0 && p1.length == 0) {
+                AddRequiredValidator(strCRef);
+            }
+        }
+    });
+}
+
+function RemoveManualEntryValidation() {
+    $('.trManualEntry').each(function (tr) {
+        var strQuantity = 'parts_' + tr + '__quantity';
+        var strPartNumber = 'parts_' + tr + '__partNumber';
+        var strCRef = 'parts_' + tr + '__cRef';
+
+        RemoveRequiredValidator(strQuantity);
+        RemoveRequiredValidator(strPartNumber);
+        RemoveRequiredValidator(strCRef);
+
+        // Remove and validation that was manually added for Invalid Part Number
+        $('#' + strPartNumber).removeClass("input-validation-error");
+        $('#' + strPartNumber).parent().find('#partErrorMessage').hide();
+    });
+}
+
+function ResetManualEntry() {
+    // Remove Validation
+    RemoveManualEntryValidation();
+
+    // Reset Field Values
+    $('.trManualEntry').each(function (tr) {
+        var strQuantity = '#parts_' + tr + '__quantity';
+        var strPartNumber = '#parts_' + tr + '__partNumber';
+        var strCRef = '#parts_' + tr + '__cRef';
+
+        $(strQuantity).val('');
+        $(strPartNumber).val('');
+        $(strCRef).val('');
+    });
+
+    // Disable Button
+    $(".btnAddToCart").addClass("disabled");
+}
+
+function photoViewImageOnClick(partNumber, url) {
+    if (url.indexOf('NoPhoto_TMB.jpg') > 0) {
+        return;
+    }
+
+    // Get Large URL
+    var imageSrc = '<img src="' + url + '" style="width:100%; height:100%;" />';
+    var imgDialog = $('<div/>').html(imageSrc);
+    imgDialog.dialog(
+        {
+            dialogClass: 'noTitleOnDialog',
+            open: function () {
+                $('body').on('click', '.ui-widget-overlay', function () {
+                    imgDialog.dialog('close');
+                });
+            }
+        });
+}
+
+function ShowCartSharePopup() {
+    var url = '/ordering/ShoppingCart/CartShare';
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (returnData) {
+            var checkSuccess = $(returnData).find("#BaseSuccess").val()
+            if (checkSuccess == "True") {
+                $("#dialog-cart-share .dk-modal__content").html(returnData);
+                dk.modal("#dialog-cart-share").show();
+            }
+            else {
+                genericErrorModal();
+            }
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+}
+
+function shareCopyToClipboard(elem) {
+
+    const copyText = $(elem).prev('#CartShareURL').val();
+
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(copyText).then(() => {
+            $('.copyToClipboard--callout:nth-of-type(1)').addClass('calloutHide');
+            $('.copyToClipboard--callout:nth-of-type(2)').removeClass('calloutHide');
+        });
+    } else {
+        // USE execCommand - Create the textarea element to copy from.
+        const copyTextareaEl = document.createElement('textarea');
+        copyTextareaEl.value = copyText;
+        copyTextareaEl.setAttribute('readonly', '');
+        copyTextareaEl.classList.add('copyTextArea');
+
+        document.body.appendChild(copyTextareaEl);
+
+        copyTextareaEl.select();
+        document.execCommand('copy');
+
+        document.body.removeChild(copyTextareaEl);
+        $('.copyToClipboard--callout:nth-of-type(1)').addClass('calloutHide');
+        $('.copyToClipboard--callout:nth-of-type(2)').removeClass('calloutHide');
+    }
+
+    $('.copyToClipboard--wrapper').on('mouseleave', function () {
+        $('.copyToClipboard--callout:nth-of-type(1)').removeClass('calloutHide');
+        $('.copyToClipboard--callout:nth-of-type(2)').addClass('calloutHide');
+    });
+}
+
+function fullOrEmpty() {
+    if ($("#cartDetails .detailRow").length <= 0 && $("#order_shoppingCart.emptyCart").length <= 0) {
+        $("#order_shoppingCart").addClass("emptyCart");
+        $("#primaryButton").hide()
+    } else if ($("#cartDetails .detailRow").length >= 1 && $("#order_shoppingCart.emptyCart").length >= 1) {
+        $("#order_shoppingCart").removeClass("emptyCart");
+        $("#primaryButton").show();
+    }
+}
+
+function refreshPage(addedFrom, returnObj) {
+    __headerLayout.getPersonalization();
+    refreshParts(addedFrom, returnObj);
+    refreshSummary();
+    refreshCartTools();
+    ResetManualEntry();
+    RemoveManualEntryValidation();
+    updateLogisticsPartnerModalContent();
+    if ($("#textImportTextArea").val().trim() == "") {
+        $('#btnImportParts').attr("disabled", true);
+    }
+    bindEvents();
+    fullOrEmpty();
+}
+
+function hideRepriceMsg() {
+    $('#AttentionArea').hide();
+    $('#divRepricedOrderMessage').hide();
+    $('#divSchedulesExpiredMessage').hide();
+}
+
+function refreshSameDayShipPrediction() {
+    if ($("#DisplaySameDayShipMessage").val() == "True") {
+        $('#additional-day-of-processing-message').removeClass('hidden')
+    }
+    else {
+        $('#additional-day-of-processing-message').addClass('hidden')
+    }
+}
+
+function refreshParts(addedFrom, returnObj) {
+    $("#hasWarehouseTransferParts").remove();
+    var url = '/ordering/ShoppingCart/ShoppingCart/GetDetails';
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (returnData) {
+            let cleanData = DOMPurify.sanitize(returnData,
+                {
+                    ADD_TAGS: ['div', 'input', 'thead', 'table', 'tr', 'th', 'tbody', 'td', 'img', 'a', 'label', 'aside', 'header', 'section',
+                        'footer', 'span'],
+                    ADD_ATTR: ['src', 'style', 'id', 'name', 'type', 'value', 'track-data', 'data-autoid', 'action', 'method', 'data-val-required',
+                        'enctype', 'class', 'role', 'aria-model', 'aria-hidden', 'data-button', 'title', 'data-modal-dismiss',
+                        'ref_page_event', 'add_part_method', 'cellspacing', 'cellpadding', 'border', 'data-val', 'data-val-number',
+                        'oninput', 'data-val-length', 'alt', 'onclick', 'ref_page_event', 'href', 'maxlength', 'placeholder', 'for',
+                        'data-modal-dismiss', 'onkeypress', 'onblur', 'onfocus', 'onchange']
+                });
+            $('.subtotal').remove();
+            $('.subtotal').remove();
+            $('#cartDetails').replaceWith($(cleanData));
+            bindEvents();
+            fullOrEmpty();
+            if (addedFrom == "manualEntry" || addedFrom == "importParts") {
+                hideRepriceMsg();
+                if (returnObj == null || returnObj.successesExist) {
+                    $("#addPartsSuccess").animate({ height: 'toggle' }, 400, function () {
+                        $(this).delay(4000).animate({ height: 'toggle' });
+                    });
+                }
+            }
+            showHideCartName();
+            showHideDeleteButton();
+            refreshPackTypeDropdowns();
+            GTMCartView();
+            tariffPriceAlignment();
+            runCountdownTimers();// run countdown timers for offsite inventory located in CountdownTimer.js
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+
+
+    if (returnObj == null || !returnObj.failuresExist) {
+        RemoveManualEntryValidation();
+    }
+}
+
+function refreshPackTypeDropdowns() {
+    const packtypedropdowns = [];
+    $("div[id^='package-dropdown_'] .dk-input").each(function () {
+        packtypedropdowns.push($(this)[0]);
+    })
+
+    packtypedropdowns.forEach((dropdown) => {
+        for (let i = 0; i < dropdown.length; i++) {
+            const optiontext = dropdown[i].text;
+            dropdown[i].setAttribute("data-text", optiontext);
+            if (optiontext.includes("(CT)")) {
+                dropdown[i].setAttribute("data-packtype", optiontext.substring(optiontext.indexOf("|") + 2, optiontext.indexOf(")") + 1));
+            }
+            else {
+                dropdown[i].setAttribute("data-packtype", optiontext.substring(optiontext.indexOf("|") + 2, optiontext.indexOf("(") - 1));
+            }
+            dropdown[i].text = dropdown[i].getAttribute("data-packtype");
+        }
+    })
+}
+
+function DisplayShortPackType(itemSeq) {
+    var dropdown = $("#package-dropdown_" + itemSeq + " .dk-input")[0];
+    for (let i = 0; i < dropdown.length; i++) {
+        dropdown[i].text = dropdown[i].getAttribute("data-packtype");
+    }
+}
+function DisplayLongPackType(itemSeq) {
+    var dropdown = $("#package-dropdown_" + itemSeq + " .dk-input")[0];
+    for (let i = 0; i < dropdown.length; i++) {
+        if (!dropdown[i].getAttribute("selected")) {
+            var droptext = dropdown[i].getAttribute("data-text");
+            dropdown[i].text = droptext.substring(0, droptext.lastIndexOf("("));
+        }
+    }
+}
+
+function refreshSummary() {
+    var url = '/ordering/ShoppingCart/ShoppingCart/GetSummary';
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (returnData) {
+            // Replace existing div HTML with new HTML
+            let elements = $(returnData);
+
+            $('#divSummaryBoxTable').replaceWith(elements.find('#divSummaryBoxTable'));
+
+            if (elements.find("#WebID").val() !== "0") {
+                $("#divWebAccessId").show();
+                $("#web_id").html(elements.find("#WebID").val())
+            }
+            else {
+                $("#divWebAccessId").hide()
+            }
+            if ($('#shipMethodDropdown') != undefined) {
+                dk.dropdowns('#shipMethodDropdown');
+            }
+            showHideCartName();
+            toggleIndiaLogisticsPartnerVisibility();
+},
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+}
+
+function refreshCartTools() {
+    var url = '/ordering/ShoppingCart/ShoppingCart/GetCartTools';
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (returnData) {
+            var holders = $("div[id$='Holder']");
+            $(holders).each(function () {
+                var whichContent = this.id.split("Holder");
+                var toolContent = $(returnData).find("#" + whichContent[0]);
+                $(this).html(toolContent);
+            });
+            toggleIndiaLogisticsPartnerVisibility();
+            $(".dataTable tbody tr:not(.detailRow)").remove(); //shouldnt be needed anymore 
+
+            $('#divCartTools').replaceWith(null);
+            const tableSelection = document.querySelector("#content");
+            tableSelection.insertAdjacentHTML("beforeEnd", returnData);
+
+            createDetailsDataTableForCart();
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+}
+
+function refreshOrderDelayed() {
+    $('.divDelayedContainer').hide();
+    var delayedOrderMessage = $("#OrderDelayedMessage").val();
+    delayedOrderMessage = delayedOrderMessage.replace("#DATE#", $("#OrderDelayedDate").val());
+    $("#spanDelayedOrderMessage").text(delayedOrderMessage);
+    $("#divDelayedDateInvalid").hide();
+    showHideDelayedDate();
+    updateLogisticsPartnerModalContent();
+}
+
+function showHideDelayedDate() {
+    //Hidden html property
+    var orderDelayed = $("#OrderDelayed").val();
+    if (orderDelayed.toUpperCase() == "TRUE") {
+        $("#divOrderDelayed").css('display', '');
+    } else {
+        $("#divOrderDelayed").css('display', 'none');
+    }
+}
+
+function getScheduleUpdateButtonText() {
+    var orderDelayed = $("#OrderDelayed").val();
+    if (orderDelayed.toUpperCase() == "TRUE") {
+        return $("#BasePopupUpdateButtonText").val();
+    }
+    else {
+        return $("#BasePopupScheduleButtonText").val();
+    }
+}
+
+function openDelayOrderDialog() {
+    var originalDate = $(".date-textbox").first().val();
+    $("#delayOrderDialog__scheduleButton").text(getScheduleUpdateButtonText());
+    $("#delayOrderDialog__deleteButton").text($('#BasePopupDeleteButtonText').val());
+    dk.modal('#delayOrderDialog').show();
+
+    $("#auto-modal-mask, #delayOrderDialog__cancelButton").on("click", function () {
+        $(".date-textbox").first().val(originalDate);
+    });
+
+    $("#delayOrderDialog__scheduleButton").on("click", function () {
+        if ($(".date-textbox").first().val() !== originalDate) {
+            var url = '/ordering/ShoppingCart/ShoppingCart/UpdateInHouseDate';
+            var date = encodeURIComponent($('.delayedDateField').val());
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: { date: date },
+                //contentType: 'application/json',
+                success: function (returnData) {
+                    if (returnData.BaseSuccess === true) {
+                        $("#OrderDelayed").val(returnData.OrderDelayed);
+                        $("#OrderDelayedDate").val(returnData.OrderDelayDateShortDateString);
+                        $("#IsScheduledOrDelayed").val("True");
+                        refreshOrderDelayed();
+                        refreshCartTools();
+                    }
+                    else {
+                        $(".date-textbox").first().val(originalDate);
+                        errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                    }
+                },
+                error: function (req, status, error) {
+                    $(".date-textbox").first().val(originalDate);
+                    genericErrorModal();
+                }
+            });
+        }
+        else {
+            $(".date-textbox").first().val(originalDate);
+        }
+
+        GTMShoppingcartClick('Accept Delay Entire Order');
+
+    });
+
+    $("#delayOrderDialog__deleteButton").on("click", function () {
+        // call shoppingcartcontroller action to remove date
+        var url = '/ordering/ShoppingCart/ShoppingCart/UpdateInHouseDate';
+        var date = encodeURIComponent($('.delayedDateField').val());
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { date: null },
+            //contentType: 'application/json',
+            success: function (returnData) {
+                if (returnData.BaseSuccess === true) {
+                    $("#OrderDelayed").val(returnData.OrderDelayed);
+                    $("#OrderDelayedDate").val(returnData.OrderDelayDateShortDateString);
+                    $("#IsScheduledOrDelayed").val("False");
+                    $('.delayedDateField').val('');
+                    refreshOrderDelayed();
+                    refreshCartTools();
+                }
+                else {
+                    $(".date-textbox").first().val(originalDate);
+                    errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                }
+            }
+        });
+
+        GTMShoppingcartClick('Delete Delay Entire Order');
+    });
+
+    toggleScheduleUpdateButton();
+
+    $(".date-textbox").change(function () {
+        toggleScheduleUpdateButton();
+    });
+
+    var orderDelayed = $("#OrderDelayed").val();
+    if (orderDelayed.toUpperCase() == "TRUE") {
+        $("#delayOrderDialog__deleteButton").removeClass("disabled");
+    }
+    else {
+        $("#delayOrderDialog__deleteButton").addClass("disabled");
+    }
+};
+
+function bindEvents() {
+    $(".remove-button").click(function () {
+        DeletePartModal(true, null);
+    });
+
+    // Remove any manual entry validation so they can "Continue to Payment"
+    $("#primaryButton").click(function () {
+        RemoveManualEntryValidation();
+        $('#mainForm').submit();
+    });
+
+    $(".deleteCheckbox").click(function () {
+        if ($(this).is(":checked")) {
+            $(this).parent().parent().parent().addClass("detailRow_checked");
+        } else {
+            $(this).parent().parent().parent().removeClass("detailRow_checked");
+        }
+        showHideDeleteButton();
+    });
+
+    $(".chkSelectAll").click(function () {
+        if (this.checked) {
+            $(".deleteCheckbox").each(function () {
+                this.checked = true;
+            })
+            showHideDeleteButton();
+        }
+        else {
+            $(".deleteCheckbox").each(function () {
+                this.checked = false;
+            })
+            showHideDeleteButton();
+        }
+    });
+
+    $(".customer-reference").off('change');
+    $(".customer-reference").change(function (elem) {
+        updateCRef(elem);
+    });
+
+    $(".part-quantity").off('focus');
+    $(".part-quantity").focus(function () {
+        getPriceBreakPanel(this);
+    });
+
+    $(".part-quantity").off('blur');
+    $(".part-quantity").blur(function () {
+        hidePriceBreak(this);
+    });
+
+    $(".part-quantity").off('change')
+    $(".part-quantity").change(function () {
+        if (this.value == 0) {
+            DeletePartModal(false, this);
+        }
+        else {
+            var hasFlagSchedules = $("[name='" + this.name.split('.')[0] + ".FlagSchedules" + "']").val() === 'True';
+            if (hasFlagSchedules) {
+                newScheduledLineItemDialog(this);
+            } else {
+                updateQuantity(this, false);
+            }
+        }
+    });
+
+    function newScheduledLineItemDialog(elm) {
+        dk.modal("#dialog-scheduled-line-item").show();
+        $("#dialog-update-scheduled").on("click", function (e) {
+            e.preventDefault();
+            updateQuantity(elm, false);
+            dk.modal("#dialog-scheduled-line-item").hide();
+        })
+        $("#digalog-cancel-scheduled, #digalog-close-scheduled").on("click", function () {
+            dk.modal("#dialog-scheduled-line-item").hide();
+            $("[name='" + elm.name + "']").val($("[name='" + elm.name + "']").attr("value"));
+        })
+
+    }
+
+    // Special wireups for Internet Exploder
+    if (document.documentMode || /Edge/.test(navigator.userAgent)) {
+        //// .change is broken in IE, so we have to write our own
+        $(".part-quantity").blur(function () {
+            var origListViewValue = $('.listView #' + this.id).val();
+            var origPhotoViewValue = $('.photoView #' + this.id).val();
+            if (this.value != origListViewValue || this.value != origPhotoViewValue) {
+                $(this).change();
+            }
+        });
+
+        $(".cart-name, .customer-reference").blur(function () {
+            if (this.value != $(this).data('val')) {
+                $(this).change();
+            }
+        });
+    }
+
+    // make enter key trigger change for these. chrome/ff do this by default -- do they really? 
+    $('.customer-reference, .part-quantity, .cart-name').keypress(function (e) {
+        var key = e.which;
+        if (key == 13)  // the enter key code
+        {
+            $('#parts_0__quantity').focus();
+            //$(this).change();
+            return false;
+        }
+    });
+
+    // this will save the previous value of inputs to reset it if the ajax call fails.
+    // this will save the previous value of inputs to reset it if the ajax call fails.
+    // example: update cRef, call fails. Need to reset to previous value
+    $(document).on('focusin', '.customer-reference, .part-quantity, .cart-name, .delayedDateField', function () {
+        $(this).data('val', $(this).val());
+    });
+}
+
+function toggleScheduleUpdateButton() {
+    if ($(".date-textbox").first().val() == "") {
+        $("#delayOrderDialog__scheduleButton").addClass("disabled");
+    }
+    else {
+        if ($("#OrderDelayedDate").val().indexOf(' ') == -1) {
+
+            if ($(".date-textbox").first().val() != $("#OrderDelayedDate").val()) {
+                $("#delayOrderDialog__scheduleButton").removeClass("disabled");
+            }
+            else {
+                $("#delayOrderDialog__scheduleButton").addClass("disabled");
+            }
+        }
+        else {
+            if ($(".date-textbox").first().val() != $("#OrderDelayedDate").val().substr(0, $("#OrderDelayedDate").val().indexOf(' '))) {
+                $("#delayOrderDialog__scheduleButton").removeClass("disabled");
+            }
+            else {
+                $("#delayOrderDialog__scheduleButton").addClass("disabled");
+            }
+        }
+    }
+}
+
+function updateCRef(elem) {
+    if (elem.target.value.trim() !== $(elem.target).data('val')) {
+        var url = '/ordering/ShoppingCart/ShoppingCart/UpdateCRef';
+        var itemSeq = elem.target.id.replace('cRef', '');
+        var cRef = encodeURIComponent(elem.target.value.trim());
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { itemSeq: itemSeq, cRef: cRef },
+            //contentType: 'application/json',
+            success: function (returnData) {
+                if (returnData.BaseSuccess === true) {
+                    refreshPage();
+                }
+                else {
+                    elem.target.value = $(elem.target).data('val');
+                    if (returnData.BaseRedirectUrl != "") {
+                        window.location.replace(returnData.BaseRedirectUrl);
+                    }
+                    else {
+                        errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                    }
+                }
+            },
+            error: function (req, status, error) {
+                elem.target.value = $(elem.target).data('val');
+                genericErrorModal();
+            }
+        });
+    }
+    else {
+        elem.target.value = $(elem.target).data('val');
+    }
+}
+
+// Part Removed Dialog
+function partRemovedDialog(partRemovedTitle, partRemovedMessage, removedText, partRemovedNumbers) {
+    $("#partRemovedMessage").html(partRemovedMessage);
+    $("#removedText").html(removedText);
+    $('#partRemovedNumbers').html(partRemovedNumbers);
+    $("#dialog-part-removed .dk-modal__title").text(partRemovedTitle);
+    dk.modal("#dialog-part-removed").show();
+}
+
+function updateQuantity(elem, overrideUpsell) {
+    if (elem.value !== "") {
+        var url = "/ordering/ShoppingCart/ShoppingCart/UpdateQuantity";
+        var itemSeq = elem.id.replace('qty', '');
+        var qty = elem.value;
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { itemSeq: itemSeq, quantity: qty, overrideUpsell: overrideUpsell },
+            datatype: 'json',
+            success: function (returnData) {
+                //GTM values
+                var items = {};
+                var index = 0;
+                var gtmVal = {
+                    "add_part_method": "Manual Add Part",
+                    "click_text": "Update Quantity"
+                }
+                $("#divShowRestrictionTypeMessage").hide();
+                if (returnData.BaseSuccess === true) {
+                    // Transaction was successful, but resulted in a bad quantity error of some type
+                    if (returnData.partResults != undefined && returnData.partResults[0] != undefined &&
+                        (returnData.partResults[0].ErrorCode == 1 || returnData.partResults[0].ErrorCode == 2 || returnData.partResults[0].ErrorCode == 3 ||
+                            returnData.partResults[0].ErrorCode == 8 || returnData.partResults[0].ErrorCode == 9 ||
+                            returnData.partResults[0].ErrorCode == 12 || returnData.partResults[0].ErrorCode == 16 ||
+                            returnData.partResults[0].ErrorCode == 19 || returnData.partResults[0].ErrorCode == 20 ||
+                            returnData.partResults[0].ErrorCode == 26 || returnData.partResults[0].ErrorCode == 27)) {
+                        createSuggestionsPopup(returnData.partResults[0], true, elem);
+                    }
+                    // MP_NO_AVAILABLE_OFFER
+                    else if (returnData.partResults != undefined && returnData.partResults[0] != undefined && returnData.partResults[0].ErrorCode == 134318630) {
+                        refreshPage();
+                        partRemovedDialog($('#ProductRemovedText').val(), $('#ProductsNoBackorderNoStockText').val(), $('#RemovedText').val(), returnData.partResults[0].detail.partNumber);
+                    }
+                    else if (!overrideUpsell && returnData.partResults != undefined && returnData.partResults[0] != undefined && returnData.partResults[0].ErrorCode == 10) {
+                        createPackTypeUpsellPopup(returnData.partResults[0], true, elem);
+                    }
+                    else {
+                        refreshPage();
+                        try {
+                            //GTM
+                            returnData.partResults.forEach(element => {
+                                var detailTag = $.parseJSON(element.GTMDetailTag);
+                                items[index] = detailTag;
+                                index++;
+                            });
+
+                            var qtyDifference = qty - elem.defaultValue;
+                            if (qtyDifference > 0)
+                                GTMAddRemoveToCart(gtmVal, items);
+                            else if (qtyDifference < 0)
+                                GTMAddRemoveToCart(gtmVal, items, false);
+                        }
+                        catch (e) {
+                            // don't let analytics break the page
+                        }
+                    }
+                }
+                else {
+                    elem.value = $(elem).data('val');
+                    if (returnData.BaseRedirectUrl != "") {
+                        window.location.replace(returnData.BaseRedirectUrl);
+                    }
+                    else {
+                        errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                    }
+                }
+            },
+            error: function (req, status, error) {
+                elem.target.value = $(elem).data('val');
+                genericErrorModal();
+            }
+        });
+    }
+    else {
+        elem.value = $(elem).data('val');
+    }
+}
+
+function updateCartName(elem) {
+    if (elem.target.value.trim() !== $(elem.target).data('val')) {
+        var url = '/ordering/ShoppingCart/ShoppingCart/UpdateCartName';
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: { cartName: elem.target.value.trim() },
+            success: function (returnData) {
+                if (returnData.BaseSuccess === true) {
+                    showHideCartName(elem.target.value.trim() == "");
+                }
+                else {
+                    elem.target.value = $(elem.target).data('val');
+                    if (returnData.BaseRedirectUrl != "") {
+                        window.location.replace(returnData.BaseRedirectUrl);
+                    }
+                    else {
+                        errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                    }
+
+                }
+            },
+            error: function (req, status, error) {
+                genericErrorModal();
+                elem.target.value = $(elem.target).data('val');
+            }
+        });
+    }
+    else {
+        elem.target.value = $(elem.target).data('val');
+    }
+
+
+}
+
+function updateSubtotals() {
+    var url = '/ordering/ShoppingCart/ShoppingCart/UpdateSubtotals';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        success: function (returnData) {
+            if (returnData.BaseSuccess === true) {
+                refreshPage();
+            }
+            else {
+                errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+            }
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+}
+
+
+//this could be simpler I think in the selection process
+// deleteButtonClicked = true or false
+// elem = the qty txt box that was set to 0
+function DeletePartModal(deleteButtonClicked, elem) {
+    dk.modal("#dialog-confirm-delete").show();
+    $("#dialog-confirm-delete_ok").off().on("click", function () {
+        //var url = '/ordering/ShoppingCart/ShoppingCart/DeleteDetail';
+        var selected = [];
+
+        // This handles cases where the select the parts to be deleted and then click the delete button.
+        if (deleteButtonClicked == true) {
+            $("#cartDetails input:checkbox:checked").each(function () {
+                if ($(this).attr('class') != 'chkSelectAll dk-checkbox') {
+                    selected.push($(this).attr('id').replace('chkDelete', ''));
+                }
+            });
+            selected.push(elem);
+
+        }
+
+        // This handles the case where they set the qty to 0
+        else {
+            selected.push(elem.id.replace('qty', ''));
+        }
+
+        DeletePart(selected);
+    });
+
+    $("#dialog-confirm-delete_cancel").on("click", function () {
+        $("#cartDetails").find(".chkSelectAll")[0].checked = false;
+        $(".part-quantity").each(function () {
+            this.value = $(this).attr("value");
+        });
+        showHideDeleteButton();
+    });
+}
+
+function DeletePart(selected, removedFrom) {
+    var url = '/ordering/ShoppingCart/ShoppingCart/DeleteDetail';
+    $('.divDelayedContainer').hide();
+
+    var gtmVal = removedFrom == "SavedForLater" ? { "click_text": "Save for Later" } : { "click_text": "Remove from Cart" };
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: { ids: selected },
+        traditional: true,
+        success: function (returnData) {
+            var items = {};
+            var index = 0;
+            $("#divShowRestrictionTypeMessage").hide();
+            if (returnData.BaseSuccess === true) {
+                refreshPage();
+                $.each(returnData.partResults, function () {
+                    try {
+                        //GTM
+                        var detailTag = $.parseJSON(this.GTMDetailTag);
+                        items[index] = detailTag;
+                        index++;
+                    }
+                    catch (e) {
+                        // don't let analytics break the page
+                    }
+                });
+                try {
+                    //GTM
+                    GTMAddRemoveToCart(gtmVal, items, false);
+                }
+                catch (e) {
+                    // don't let analytics break the page
+                }
+            } else {
+                if (returnData.BaseRedirectUrl != "") {
+                    window.location.replace(returnData.BaseRedirectUrl);
+                }
+                else {
+                    errorModal(returnData.BaseStatusCode, returnData.BaseStatusCodeDesc, returnData.BaseErrorMessage);
+                }
+            }
+        },
+        error: function (xhr, err) {
+            genericErrorModal();
+        }
+    });
+}
+
+function hidePriceBreak() {
+    $('div[id=priceDiv]').remove();
+}
+
+function getPriceBreakPanel(element) {
+    var mpOfferId = $(element.parentElement.parentElement.parentElement).find("input[name$='MPOfferID']")[0].value;
+    // Skip for Marketplace
+    if (!(mpOfferId > 0)) {
+        var partNumber = $(element.parentElement.parentElement.parentElement).find("input[name$='PartNumber']")[0].value;
+        var baseUrl = '/ordering/shoppingcart/pricebreak';
+        var url = baseUrl + '?partNumber=' + encodeURIComponent(encodeURIComponent(partNumber));
+        $.ajax({
+            url: url,
+            global: false,
+            success: function (returnData) {
+                if (returnData.status != 'failed') {
+                    var hasFocus = $(element).is(":focus");
+                    hidePriceBreak()
+                    // Only add the Price Break Table if the focus is still on the Qty field.
+                    if (hasFocus) {
+                        $(element.parentElement).append($(returnData));
+                    }
+                }
+            },
+            error: function () { },
+            timeout: 5000
+        });
+    }
+}
+
+function showHideDeleteButton() {
+    if ($(".deleteCheckbox:checkbox:checked").length > 0) {
+        $("#divCartDetailsButtons").addClass("active-buttons");
+        $("div[class*='dk-btn']").removeClass("disabled");
+        $("#floatingTrash").addClass("showTrash");
+    }
+    else {
+        $("#divCartDetailsButtons").removeClass("active-buttons");
+        $("div[class*='dk-btn']").addClass("disabled");
+        $(".chkSelectAll")[0].checked = false;
+        $("#floatingTrash").removeClass("showTrash");
+    }
+    if ($(".deleteCheckbox:checkbox:not(:checked)").length >= 1) {
+        $(".chkSelectAll")[0].checked = false;
+    }
+}
+
+//check these popups to see if they should be destroyed instead
+function ShowLeadTimePopup(rowIndex) {
+    dk.modal("#dialog-check-leadtimes-" + rowIndex).show();
+    modalCloseTriggers();
+}
+
+function ShowAltPopup(rowIndex) {
+    dk.modal("#dialog-check-alt-" + rowIndex).show();
+    modalCloseTriggers();
+}
+
+function ShowDuplicateItemsPopup(rowIndex) {
+    dk.modal("#dialog-duplicate-items-" + rowIndex).show();
+    modalCloseTriggers();
+}
+
+function ShowSubstitutesPopup(rowIndex) {
+    dk.modal("#dialog-substitutes-" + rowIndex).show();
+    modalCloseTriggers();
+}
+
+function AddPackTypeUpsellToCart(element, isUpdate, originalPartId, originalQty) {
+    var parts = [];
+    var selectedOptionIndexes = [];
+
+    $("#dialog-suggestions input:radio[name='suggestions']:checked").each(function () {
+        var index = this.id.replace('suggestion', '');
+        var obj = {
+            quantity: $("#validOptions_" + index + "__quantity")[0].value,
+            partNumber: $("#validOptions_" + index + "__partNumber")[0].value,
+            cRef: $("#validOptions_" + index + "__cRef")[0].value,
+            partId: $("#validOptions_" + index + "__partId")[0].value
+        }
+        if (isUpdate) {
+            if (obj.partId != originalPartId) {
+                selectedOptionIndexes.push(index);
+                parts.push(obj);
+            }
+        }
+        else {
+            selectedOptionIndexes.push(index);
+            parts.push(obj);
+        }
+    });
+
+    $("#dialog-suggestions input:radio[name='subOptions']:checked").each(function () {
+        var index1 = this.id.replace('suggestion', '')[0];
+        var index2 = this.id.replace('suggestion', '')[1];
+        var obj = {
+            quantity: $("#validOptions_" + index1 + "__subOptions_" + index2 + "__quantity")[0].value,
+            partNumber: $("#validOptions_" + index1 + "__subOptions_" + index2 + "__partNumber")[0].value,
+            cRef: $("#validOptions_" + index1 + "__subOptions_" + index2 + "__cRef")[0].value,
+            partId: $("#validOptions_" + index1 + "__subOptions_" + index2 + "__partId")[0].value
+        }
+        if (selectedOptionIndexes.includes(index1)) {
+            if (isUpdate) {
+                if (!(obj.partId == originalPartId && obj.quantity == originalQty)) {
+                    parts.push(obj);
+                }
+            }
+            else {
+                parts.push(obj);
+            }
+        }
+    });
+
+    if (parts.length > 0) {
+        var addedFrom = "manualEntry";
+        $.ajax({
+            url: "/ordering/shoppingcart/shoppingcart/AddParts",
+            type: "POST",
+            data: { details: parts, overrideUpsell: true, disableValueCalc: $("#disableValueCalc").prop('checked') },
+            success: function (data) {
+                $("#divShowRestrictionTypeMessage").hide();
+                if (data.BaseSuccess == true) {
+                    try {
+                        //GTM for if parts were added via any models after manual entry
+                        const gtmVal = {
+                            "add_part_method": "Manual Add Part",
+                            "click_text": "Add to Cart",
+                            "event": "add_to_cart"
+                        }
+                        data.partResults.forEach(function (partResult) {
+                            let gtmTagValue = $.parseJSON(partResult.GTMDetailTag);
+                            GTMAddRemoveToCart(gtmVal, [gtmTagValue]);
+                        });
+                    }
+                    catch (e) {
+                        //dont let analytics break the page
+                    }
+                    refreshPage(addedFrom);
+                    $('.AddPart').val('');
+                    $('#parts_0__quantity').focus();
+                }
+                else {
+                    errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                genericErrorModal();
+            }
+        });
+    }
+    $('#disableValueCalcDiv').remove();
+}
+
+// should be able to remove - leaving in case this gets triggered from a phrase
+//function ShowLearnMoreDialog() {
+//    $("#learnMoreDialog").dialog({
+//        buttons: [{
+//            text: $('#BasePopupOkButtonText').val(),
+//            click: function () {
+//                $(this).dialog("close");
+//            }
+//        }]
+//    });
+//}
+
+function ShowCurrencyPopupDialog() {
+    dk.modal("#dialog-currency-confirmation").show();
+    $("#dialog-currency-confirmation .dk-btn__primary").on("click", function () {
+        if ($('#InvalidCurrency').val() == 'True') {
+
+            var query = document.location.search.substr(document.location.search.indexOf('blockedCurr'));
+            var val = query.substr(query.indexOf('=') + 1);
+
+            repriceOrder(val);
+            window.location.href = $('#InvalidCurrRedirectUrl').val();
+        }
+        else {
+            repriceOrder();
+        }
+        dk.modal("#dialog-currency-confirmation").hide();
+    });
+
+    $("#dialog-currency-confirmation .dk-btn__secondary").on("click", function () {
+        putCurrencyBack();
+        dk.modal("#dialog-currency-confirmation").hide();
+    });
+    //var popupDialogContinueButton = $('#PopupDialogContinueButton').val();
+    //var popupDialogCancelButton = $('#PopupDialogCancelButton').val();
+}
+
+function isValidUrl(url) {
+
+    let parts = url.split('?');
+    let path = parts[0];
+    let query = parts[1] || '';
+
+    // Allow only this endpoint 
+    if (path !== '/ordering/ShoppingCart/ShoppingCart/ChangeCurrency') {
+        return false;
+    }
+
+    let params = new URLSearchParams(query);
+
+    // reprice must be  4 = RepriceReason.CurrencyChangeContinue
+    if (params.get('reprice') !== '4') {
+        return false;
+    }
+
+    // curr must be number (if present)
+    if (params.has('curr') && !/^\d+$/.test(params.get('curr'))) {
+        return false;
+    }
+
+    // newSite must be number (if present)
+    if (params.has('newSite') && !/^\d+$/.test(params.get('newSite'))) {
+        return false;
+    }
+
+    // block unknown params
+    for (let key of params.keys()) {
+        if (!['reprice', 'curr', 'newSite'].includes(key)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+function repriceOrder(curr) {
+
+    var redirect = true;
+    var url = '/ordering/ShoppingCart/ShoppingCart/ChangeCurrency?reprice=4'; // 4 = RepriceReason.CurrencyChangeContinue
+    if (curr != undefined && curr.length) {
+        url += '&curr=' + curr;
+        redirect = false;
+    }
+    if ($('#NewSiteCode').val() != undefined && $('#NewSiteCode').val() != '0') {
+        url += '&newSite=' + $('#NewSiteCode').val();
+    }
+
+    if (!isValidUrl(url)) {
+        setTimeout(() => {
+           genericErrorModal("Invalid currency");
+        }, 100);
+       return;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (returnData) {
+            if (redirect) {
+                if (returnData.redirectUrl != "") {
+                    window.location.href = returnData.redirectUrl;
+                }
+                else {
+                    genericErrorModal();
+                }
+            }
+            else {
+                return;
+            }
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+
+    })
+}
+
+function putCurrencyBack() {
+    $.ajax({
+        url: '/ordering/ShoppingCart/ShoppingCart/ChangeCurrency?reprice=5&oldCurr=' + $('#OldCurrency').val(), // 5 = RepriceReason.CurrencyChangeCancel
+        type: 'GET',
+        success: function (returnData) {
+            window.location.href = "shoppingcart?display=yes";
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+
+    });
+}
+
+
+function showHideCartName(isBlank) {
+    if (isBlank == undefined || isBlank) {
+        $("#cartNameDiv").hide();
+        $("#blankCartNameDiv").show();
+    }
+    else {
+        $("#cartNameDiv").show();
+        $("#blankCartNameDiv").hide();
+    }
+}
+
+function ValidateQty(qty) {
+    var validQty;
+    if (qty.value.length > 1) {
+        validQty = qty.value.replace(/[^0-9]/g, '');
+    }
+    else {
+        validQty = qty.value.replace(/[^1-9]/g, '');
+    }
+
+    // Remove leading zeroes if the use paste instead of typing in the qty.
+    if (validQty.length > 0) {
+        $(qty).val(parseInt(validQty, 10));
+    }
+    else {
+        $(qty).val(validQty);
+    }
+
+    RemoveManualEntryRequiredValidation();
+}
+
+function ValidatePartNumber(item) {
+    $(item).parent().find('#partErrorMessage').hide();
+    RemoveManualEntryRequiredValidation();
+}
+
+function ValidateCRef() {
+    RemoveManualEntryRequiredValidation();
+}
+
+function RemoveManualEntryRequiredValidation() {
+    var customerId = $('#BaseCustomerID').val();
+    var allBlank = true;
+
+    $('.trManualEntry').each(function (tr) {
+        var strQuantity = 'parts_' + tr + '__quantity';
+        var strPartNumber = 'parts_' + tr + '__partNumber';
+        var strCRef = 'parts_' + tr + '__cRef';
+
+        var q1 = $('#' + strQuantity).val();
+        var p1 = $('#' + strPartNumber).val();
+        var c1 = $('#' + strCRef).val();
+
+        if (q1.length > 0 || p1.length > 0 || c1.length > 0) {
+            allBlank = false;
+        }
+
+        if (customerId == 0) {
+            if (q1.length == 0 && c1.length == 0) {
+                RemoveRequiredValidator(strPartNumber);
+            }
+            if (p1.length == 0 && c1.length == 0) {
+                RemoveRequiredValidator(strQuantity);
+            }
+        }
+        else {
+            if (p1.length == 0 && c1.length == 0) {
+                RemoveRequiredValidator(strQuantity);
+            }
+
+            if (q1.length == 0 && c1.length == 0) {
+                RemoveRequiredValidator(strPartNumber);
+            }
+        }
+    });
+
+    if (allBlank) {
+        $(".btnAddToCart").addClass("disabled")
+    }
+    else {
+        $(".btnAddToCart").removeClass("disabled")
+    }
+}
+
+// Used on both shopping cart page and submit page - this version trimmed down for cart view.
+function createDetailsDataTableForCart() {
+    var downloadButtonExcel = {
+        exportOptions: {
+            format: {
+                header: function (data) {
+                    return data;
+                },
+                body: function (data, row, column, node) {
+                    if (column < 8) {
+                        return node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi, '').trim();
+                    }
+                    else {
+                        if (column === 8) {
+                            var cellValue = node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi, '').trim();
+                            return $.isNumeric(cellValue.replace(',', '.')) ? cellValue.replace(',', '.') : cellValue;
+                        } else {
+                            var cellValue = node.innerText.replace('€', '').replace('HK$', '').replace('AU$', '').replace('NT$', '').replace('$', '').replace(' kr', '')
+                                .replace('¥', '').replace('₱', '').replace('£', '').replace('₩', '').replace('kr. ', '').replace('kr ', '').replace('₪', '').trim();
+                            return $.isNumeric(cellValue.replace(',', '.')) ? cellValue.replace(',', '.') : cellValue;
+                        }
+                    }
+                }
+            }
+        },
+        filename: function () {
+            return $("input[id*='BaseFileDownloadName']").val();
+        }
+    };
+
+    var downloadButtonCsv = {
+        exportOptions: {
+            format: {
+                header: function (data) {
+                    return data;
+                },
+                body: function (data, row, column, node) {
+                    return column === 9 ?
+                        node.innerText.replace('€', '').replace('HK$', '').replace('AU$', '').replace('NT$', '').replace('$', '').replace(' kr', '')
+                            .replace('¥', '').replace('₱', '').replace('£', '').replace('₩', '').replace('kr. ', '').replace('kr ', '').replace('₪', '').trim() :
+                        node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi, '').trim();
+                }
+            }
+        },
+        filename: function () {
+            return $("input[id*='BaseFileDownloadName']").val();
+        }
+    };
+
+    $(".details .dataTable").DataTable({
+        "destroy": true,
+        "bSort": false,
+        "paging": false,
+        "bInfo": false,
+        "searching": false,
+        "autoWidth": false,
+        "iDisplayLength": -1,
+        "dom": 't<"clear"><B>',
+        "buttons": [
+            $.extend(true, {}, downloadButtonCsv, {
+                extend: "csvHtml5",
+                charset: "utf-8",
+                bom: true,
+                init: function (dt, node, config) {
+                    node.attr("id", "csvDownloadButton");
+                    node.attr("data-autoid", "downloadCsv");
+                }
+            }),
+            $.extend(true, {}, downloadButtonExcel, {
+                extend: "excelHtml5",
+                init: function (dt, node, config) {
+                    node.attr("id", "excelDownloadButton");
+                    node.attr("data-autoid", "downloadExcel");
+                }
+            })
+        ]
+    });
+}
+
+function checkoutAsGuest() {
+    $("#UserSelectedCheckoutAsGuest").val("True");
+    VerifyContinue(true);
+}
+
+function VerifyContinue(isGuest) {
+    startSpinner();
+    isGuest == true ? GTMBeginCheckout("Checkout as Guest") : GTMBeginCheckout();
+
+    $('#mainForm').submit();
+}
+
+function openMarketplaceSeparateShippingFeeModal() {
+    dk.modal("#dialog-marketplace-separate-shipping-fee").show();
+};
+
+function shareWithEkom() {
+    dk.modal("#dialog-ekom").show();
+    $("#dialog-ekom .dk-btn__primary").on("click", function () {
+        if ($("#ekom-form").valid()) {
+            var EKOM_Name = $("#EKOM_Name").val();
+            var EKOM_Email = $("#EKOM_Email").val();
+            var EKOM_CompanyName = $("#EKOM_CompanyName").val();
+            var EKOM_WebSite = $("#EKOM_WebSite").val();
+            $.ajax({
+                url: "/ordering/ShoppingCart/ShoppingCart/PostShareWithEKOM",
+                type: "POST",
+                data: { EKOM_Name, EKOM_Email, EKOM_CompanyName, EKOM_WebSite },
+                success: function (returnData) {
+                    if (returnData === "True") {
+                        dk.modal("#dialog-ekom").hide();
+                        dk.modal("#dialog-ekom-success").show();
+                    } else {
+                        genericErrorModal($("#ekom-error").text())
+                    }
+                }
+            }).then(() => {
+                $(this).dialog("close");
+                dk.modal("#dialog-ekom").hide();
+            })
+        }
+    });
+}
+
+function UpdateShipMethod(shipValue) {
+
+    let shipPrice = shipValue.split(':')[0];
+    let shipMethod = shipValue.split(':')[1];
+    let transitDays = shipValue.split(':')[2];
+    let url = '/ordering/ShoppingCart/ShoppingCart/ShipMethodChanged';
+    url = window.fixUrlForGuest(url);
+    if (shipPrice == 0) {
+        shipPrice = -1;
+    }
+
+    let selectedShipMethod =
+    {
+        "PrimaryShipMethod": shipMethod,
+        "ShippingPrice": shipPrice,
+        "ShipAssignmentMethodOptions": [{ "EstimatedTransitDays": transitDays }]
+    }
+
+    // Get Selections for each Ship Assignment
+    let selectedShipMethods = [];
+    selectedShipMethods.push(selectedShipMethod);
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: {
+            shipAssignmentViewModels: selectedShipMethods
+        },
+        success: function (returnData) {
+            //we want to save the dropdown, since it has all our shipping options in it. The one in returnData does not.
+            //I've tried doing this other ways but this was the one that worked'
+
+            let dropdown = $("#shipMethodDropdown").html();
+            dropdown = dropdown.replace('selected="selected"', '').replace('value="' + shipValue + '"', 'value="' + shipValue + '" selected="selected"');
+
+            $('#divSummaryBoxTable').replaceWith($(returnData).find("#divSummaryBoxTable"));
+            $('#shipMethodDropdown').html(dropdown);
+            dk.dropdowns('#shipMethodDropdown');
+
+        },
+        error: function (req, status, error) {
+            genericErrorDialog();
+        },
+        complete: function () {
+        }
+    });
+}
+
+function GTMCartView() {
+    const items = GetGTMTagDetails();
+    const subtotal = GetSubtotal();
+
+    if (items.length > 0) {
+        //push view
+        gtmValue = {
+            "event": "view_cart",
+            "ecommerce": {
+                "currency": utag_data.currency,
+                "local_currency": utag_data.local_currency,
+                "value": subtotal,
+                "checkout_option": utag_data.checkout_option,
+                "checkout_type": utag_data.checkout_type,
+                "items": Object.values(items)
+            }
+        }
+        if (dataLayer !== undefined && dataLayer.push !== undefined) {
+            dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+            dataLayer.push(gtmValue);
+        }
+    }
+}
+
+function GTMAddRemoveToCart(gtmVal, items, addFlag = true) {
+    var gtmValue;
+    switch (addFlag) {
+        case true:
+            gtmValue = {
+                "event": "add_to_cart",
+                "click_text": gtmVal.click_text,
+                "event_state": gtmVal.add_part_method,
+                "ecommerce": {
+                    "currency": utag_data.currency,
+                    "local_currency": utag_data.local_currency,
+                    "add_part_method": gtmVal.add_part_method,
+                    "items": Object.values(items)
+                }
+            }
+            break;
+        case false:
+            gtmValue = {
+                "event": "remove_from_cart",
+                "click_text": gtmVal.click_text,
+                "ecommerce": {
+                    "currency": utag_data.currency,
+                    "local_currency": utag_data.local_currency,
+                    "items": Object.values(items)
+                }
+            }
+            break;
+    }
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GTMAddToWishlist(items, eventState) {
+    var gtmValue = {
+        "event": "add_to_wishlist",
+        "click_text": "Add to List",
+        "ecommerce": {
+            "currency": utag_data.currency,
+            "local_currency": utag_data.local_currency,
+            "event_state": eventState,
+            "items": items
+        }
+    }
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GTMPageView() {
+    var gtmValue = {
+        'event': 'page_view',
+        'content_group1': utag_data.page_content_group,
+        'content_group2': utag_data.page_content_sub_group,
+        'page_title': utag_data.page_title,
+        'page_type': utag_data.page_type,
+        'page_sub_type': utag_data.page_sub_type,
+        'page_id': utag_data.page_id,
+        'page_state': utag_data.page_state != undefined ? utag_data.page_state : "",
+        'personalization_state': { "cart2": "classic" },
+        'registered_user_id': utag_data.registered_user_id,
+        'item_web_id': utag_data.pre_order_id
+    }
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+        dataLayer.push(gtmValue);
+    }
+
+    if ($('.GTMDetailTag').length > 0)
+        GTMCartView();
+}
+
+function GTMBeginCheckout(clickText = "Click Checkout") {
+    //get values
+    const items = GetGTMTagDetails();
+    const subtotal = GetSubtotal();
+
+    var gtmValue = {
+        "event": "begin_checkout",
+        "click_text": clickText,
+        "ecommerce": {
+            "currency": utag_data.currency,
+            "local_currency": utag_data.local_currency,
+            "value": subtotal,
+            "checkout_step": 1,
+            "checkout_option": utag_data.checkout_option,
+            "checkout_type": utag_data.checkout_type,
+            "items": Object.values(items)
+        }
+    }
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GetGTMTagDetails(tagClass = '.GTMDetailTag', data = undefined) {
+    var items = [];
+    var indexx = 0;
+    if (data === undefined) {
+        var DetailTagElements = $(tagClass);
+        $(DetailTagElements).each(function (index, element) {
+            var tagValue = $(element).val();
+            if ($(element).val()) {
+                var detailTag = $.parseJSON(tagValue);
+                items[indexx] = detailTag;
+                indexx++;
+            }
+        });
+    }
+    else {
+        $(data.partResults).each(function (index, element) {
+            const detailTag = $.parseJSON(element.GTMDetailTag);
+
+            //don't add parts that errored
+            if (detailTag != undefined && !data.BaseRedirectUrl.includes(detailTag.item_sku)) {
+                items[indexx] = detailTag;
+                indexx++;
+            }
+        });
+    }
+
+    return items;
+}
+
+/* VALUE CALCULATOR */
+function GTMValueCalcModalOpen(title) {
+    var gtmValue = {
+        "event": "shopping_cart_vc_display",
+        "click_text": title,
+        "content_group2": title,
+        "page_title": title
+    }
+
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GTMValueCalcAdd(title, quantityOption) {
+    var gtmValue = {
+        "event": "shopping_cart_click",
+        "click_text": title + ", Add",
+        "event_state": quantityOption
+    }
+    
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GTMValueCalcCancel(title) {
+    var gtmValue = {
+        "event": "shopping_cart_click",
+        "click_text": title + ", Cancel"
+    }
+
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push(gtmValue);
+    }
+}
+
+function GetSubtotal() {
+    let element = $('#SubtotalNotFormatted');
+
+    return element.length > 0 ? Number($(element).val()) : 0;
+}
+
+function ChangeMoreLeadTimesText(e) {
+    let detailNumber = e.id.slice(-1);
+
+    if (e.id.indexOf("ShowMoreLeadTimes") !== -1) {
+        $('#ShowMoreLeadTimes-' + detailNumber).hide();
+        $('#ShowFewerLeadTimes-' + detailNumber).show();
+        $('#pExtraLeadTimeNote-' + detailNumber).css('display', 'block');
+    } else {
+        $(e.id).show();
+        $('#ShowFewerLeadTimes-' + detailNumber).hide();
+        $('#ShowMoreLeadTimes-' + detailNumber).show();
+        $('#pExtraLeadTimeNote-' + detailNumber).css('display', 'none');
+    }
+}
+;
+$(document).ready(function () {
+    function scheduleRefreshAtSpecificTimes(times) {
+        let now = new Date();
+        let closestTimeDiff = Infinity;       
+
+        // Find the next time to refresh
+        for (let time of times) {
+            let [hour, minute] = time;
+            let currentDate = new Date();
+            let targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(),
+                hour, minute, 0, 0);
+
+            //If the time is already past today, set it to tomorrow
+            if (targetDate < now) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            let timeDiff = targetDate - now;
+            if (timeDiff < closestTimeDiff) {
+                closestTimeDiff = timeDiff;
+            }
+        }
+
+        // Wait for the calculated time and then refresh the page
+        setTimeout(function () {
+            location.reload();
+        }, closestTimeDiff);
+    }
+
+    let startOfBusinessHour = new Date($("#StartOfBusinessUtc").val()).getHours();
+    let endOfBusinessHour = new Date($("#EndOfBusinessUtc").val()).getHours();
+
+    // Define your specific times (24-hour format)
+    let specificTimes = [[startOfBusinessHour, 0], [endOfBusinessHour, 0]];
+
+    // Schedule refreshes at the defined times
+    scheduleRefreshAtSpecificTimes(specificTimes);
+    runCountdownTimers()
+});
+
+function runCountdownTimers() {
+
+    if ($("#FlagShowOffsiteWarningOnly").val() === 'True') {
+        $("#divOffsiteInvExpiredWarning").removeClass("hidden");
+        return; // No countdown timers to run
+    }
+    // Hide the warning message if it was previously shown
+    $("#divOffsiteInvExpiredWarning").addClass("hidden");
+
+    let items = $('[id^="offsite-inv-countdown"]');
+    for (let item of items) {
+        let itemId = item.id.replace("offsite-inv-countdown", "");
+        runTimer(itemId);
+    };
+}
+
+function runTimer(itemNumber) {
+    let x = setInterval(function () {
+        try {
+            let nowString = new Date().toUTCString();
+            let now = Date.parse(nowString);
+            let dateString = $("#Details_" + (itemNumber - 1) + "__TimeToOrderBy").val();
+            let timeStamp = Date.parse(dateString + " GMT");
+            let distance = new Date(timeStamp) - now;
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            $("#offsite-inv-countdown" + itemNumber + " .countDownTimer").html("<span class='bold'>" + hours.toString().padStart(2, "0") + ":" + minutes.toString().padStart(2, "0") + ":" + seconds.toString().padStart(2, "0") + "</span>");
+
+            // If the count down is finished display expired message
+            if (distance < 0) {
+                clearInterval(x);
+                $("#offsite-inv-countdown" + itemNumber).addClass("hidden");
+                $("#offsite-inv-expired" + itemNumber).removeClass("hidden");
+                $("#divOffsiteInvExpiredWarning").removeClass("hidden");
+            }
+            else {
+                $("#offsite-inv-countdown" + itemNumber).removeClass("hidden");
+            }
+        }
+        catch {
+
+        }
+       
+    }, 1000);
+};
+// this is the minified version, the full version can be found here: http://fgnass.github.io/spin.js/
+(function (t, e) { if (typeof exports == "object") module.exports = e(); else if (typeof define == "function" && define.amd) define(e); else t.Spinner = e() })(this, function () { "use strict"; var t = ["webkit", "Moz", "ms", "O"], e = {}, i; function o(t, e) { var i = document.createElement(t || "div"), o; for (o in e) i[o] = e[o]; return i } function n(t) { for (var e = 1, i = arguments.length; e < i; e++) t.appendChild(arguments[e]); return t } var r = function () { var t = o("style", { type: "text/css" }); n(document.getElementsByTagName("head")[0], t); return t.sheet || t.styleSheet }(); function s(t, o, n, s) { var a = ["opacity", o, ~~(t * 100), n, s].join("-"), f = .01 + n / s * 100, l = Math.max(1 - (1 - t) / o * (100 - f), t), d = i.substring(0, i.indexOf("Animation")).toLowerCase(), u = d && "-" + d + "-" || ""; if (!e[a]) { r.insertRule("@" + u + "keyframes " + a + "{" + "0%{opacity:" + l + "}" + f + "%{opacity:" + t + "}" + (f + .01) + "%{opacity:1}" + (f + o) % 100 + "%{opacity:" + t + "}" + "100%{opacity:" + l + "}" + "}", r.cssRules.length); e[a] = 1 } return a } function a(e, i) { var o = e.style, n, r; if (o[i] !== undefined) return i; i = i.charAt(0).toUpperCase() + i.slice(1); for (r = 0; r < t.length; r++) { n = t[r] + i; if (o[n] !== undefined) return n } } function f(t, e) { for (var i in e) t.style[a(t, i) || i] = e[i]; return t } function l(t) { for (var e = 1; e < arguments.length; e++) { var i = arguments[e]; for (var o in i) if (t[o] === undefined) t[o] = i[o] } return t } function d(t) { var e = { x: t.offsetLeft, y: t.offsetTop }; while (t = t.offsetParent) e.x += t.offsetLeft, e.y += t.offsetTop; return e } var u = { lines: 12, length: 7, width: 5, radius: 10, rotate: 0, corners: 1, color: "#000", direction: 1, speed: 1, trail: 100, opacity: 1 / 4, fps: 20, zIndex: 2e9, className: "spinner", top: "auto", left: "auto", position: "relative" }; function p(t) { if (typeof this == "undefined") return new p(t); this.opts = l(t || {}, p.defaults, u) } p.defaults = {}; l(p.prototype, { spin: function (t) { this.stop(); var e = this, n = e.opts, r = e.el = f(o(0, { className: n.className }), { position: n.position, width: 0, zIndex: n.zIndex }), s = n.radius + n.length + n.width, a, l; if (t) { t.insertBefore(r, t.firstChild || null); l = d(t); a = d(r); f(r, { left: (n.left == "auto" ? l.x - a.x + (t.offsetWidth >> 1) : parseInt(n.left, 10) + s) + "px", top: (n.top == "auto" ? l.y - a.y + (t.offsetHeight >> 1) : parseInt(n.top, 10) + s) + "px" }) } r.setAttribute("role", "progressbar"); e.lines(r, e.opts); if (!i) { var u = 0, p = (n.lines - 1) * (1 - n.direction) / 2, c, h = n.fps, m = h / n.speed, y = (1 - n.opacity) / (m * n.trail / 100), g = m / n.lines; (function v() { u++; for (var t = 0; t < n.lines; t++) { c = Math.max(1 - (u + (n.lines - t) * g) % m * y, n.opacity); e.opacity(r, t * n.direction + p, c, n) } e.timeout = e.el && setTimeout(v, ~~(1e3 / h)) })() } return e }, stop: function () { var t = this.el; if (t) { clearTimeout(this.timeout); if (t.parentNode) t.parentNode.removeChild(t); this.el = undefined } return this }, lines: function (t, e) { var r = 0, a = (e.lines - 1) * (1 - e.direction) / 2, l; function d(t, i) { return f(o(), { position: "absolute", width: e.length + e.width + "px", height: e.width + "px", background: t, boxShadow: i, transformOrigin: "left", transform: "rotate(" + ~~(360 / e.lines * r + e.rotate) + "deg) translate(" + e.radius + "px" + ",0)", borderRadius: (e.corners * e.width >> 1) + "px" }) } for (; r < e.lines; r++) { l = f(o(), { position: "absolute", top: 1 + ~(e.width / 2) + "px", transform: e.hwaccel ? "translate3d(0,0,0)" : "", opacity: e.opacity, animation: i && s(e.opacity, e.trail, a + r * e.direction, e.lines) + " " + 1 / e.speed + "s linear infinite" }); if (e.shadow) n(l, f(d("#000", "0 0 4px " + "#000"), { top: 2 + "px" })); n(t, n(l, d(e.color, "0 0 1px rgba(0,0,0,.1)"))) } return t }, opacity: function (t, e, i) { if (e < t.childNodes.length) t.childNodes[e].style.opacity = i } }); function c() { function t(t, e) { return o("<" + t + ' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">', e) } r.addRule(".spin-vml", "behavior:url(#default#VML)"); p.prototype.lines = function (e, i) { var o = i.length + i.width, r = 2 * o; function s() { return f(t("group", { coordsize: r + " " + r, coordorigin: -o + " " + -o }), { width: r, height: r }) } var a = -(i.width + i.length) * 2 + "px", l = f(s(), { position: "absolute", top: a, left: a }), d; function u(e, r, a) { n(l, n(f(s(), { rotation: 360 / i.lines * e + "deg", left: ~~r }), n(f(t("roundrect", { arcsize: i.corners }), { width: o, height: i.width, left: i.radius, top: -i.width >> 1, filter: a }), t("fill", { color: i.color, opacity: i.opacity }), t("stroke", { opacity: 0 })))) } if (i.shadow) for (d = 1; d <= i.lines; d++) u(d, -2, "progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)"); for (d = 1; d <= i.lines; d++) u(d); return n(e, l) }; p.prototype.opacity = function (t, e, i, o) { var n = t.firstChild; o = o.shadow && o.lines || 0; if (n && e + o < n.childNodes.length) { n = n.childNodes[e + o]; n = n && n.firstChild; n = n && n.firstChild; if (n) n.opacity = i } } } var h = f(o("group"), { behavior: "url(#default#VML)" }); if (!a(h, "transform") && h.adj) c(); else i = a(h, "animation"); return p });
+;
+//****************************************************************************************************//
+//*** Part Error Handling ***
+//****************************************************************************************************//
+
+function RemoveRowFromPartErrorTable(indexToRemove) {
+    // Get the part number before removing the row for cache cleanup
+    const row = $('#PartErrorTable_Row' + indexToRemove);
+    const partNumber = row.find('[id*=_PartNumber]').attr('originalValue');
+
+    // Remove from cache using composite key
+    if (partNumber) {
+        RemoveCachedPartErrorData(partNumber + '_' + indexToRemove);
+    }
+
+    // Remove whatever row they clicked to remove
+    row.remove();
+
+    const partErrorTableChildrenCount = $('#PartErrorTable tbody').children().length;
+    // If the children count is 0 we no longer need to show the table
+    if (partErrorTableChildrenCount == 0) {
+        $('#PartErrorContainer').attr('hidden', '');
+        // Empty the cache if theres no rows since there shouldn't be any data either
+        ClearCachedPartErrorData();
+    }
+    else {
+        UpdateRemainingPartErrorTableRowIndices(indexToRemove);
+    }
+}
+
+function UpdateRemainingPartErrorTableRowIndices(removedIndex) {
+    const rowsToUpdate = $('#PartErrorTable tbody tr').filter(function () {
+        const rowIndex = Number.parseInt($(this).attr('rowIndex'), 10);
+        return !Number.isNaN(rowIndex) && rowIndex > removedIndex;
+    });
+
+    // Update each row
+    rowsToUpdate.each(function () {
+        const currentIndex = Number.parseInt($(this).attr('rowIndex'), 10);
+        const newIndex = currentIndex - 1;
+
+        // Update cache with new index BEFORE updating the row
+        const partNumber = $(this).find('[id*=_PartNumber]').attr('originalValue');
+        const oldKey = partNumber + '_' + currentIndex;
+        const newKey = partNumber + '_' + newIndex;
+
+        const cachedData = GetCachedPartErrorData(oldKey);
+        if (cachedData) {
+            RemoveCachedPartErrorData(oldKey);
+            CachePartErrorData(newKey, cachedData);
+        }
+
+        UpdatePartErrorRowIndex($(this), newIndex);
+    });
+}
+
+function AssignIndexToPartErrorRows(partResults) {
+    const rowsToUpdate = $('#PartErrorTable tbody tr').filter(function () {
+        const rowIndex = Number.parseInt($(this).attr('rowIndex'), 10);
+        return Number.isNaN(rowIndex);
+    });
+
+    let currentNumberOfRows = $('#PartErrorTable tbody tr').filter(function () {
+        const rowIndex = Number.parseInt($(this).attr('rowIndex'), 10);
+        return !Number.isNaN(rowIndex);
+    }).length + 1;
+
+    //grab all the failed parts from the part results
+    const partsWithFailures = partResults.filter(function (partResult) {
+        return partResult.ReturnValue != 1 
+    });
+    let failedPartResultCounter = 0;
+    
+    rowsToUpdate.each(function (i, rowBeingUpdated) {
+        UpdatePartErrorRowIndex($(this), currentNumberOfRows);
+        // cache the part result information matching the current rows part number if the part has a validpartoption or a packtypeupselloption
+        // THIS REQUIRES THE PART ROWS TO BE SENT BACK IN THE SAME ORDER AS THE FAILED PARTS ARE SENT BACK IN THE PART RESULT
+        const partNumber = $(rowBeingUpdated).find('[id*=_PartNumber]').attr('originalValue');
+        if ((partNumber == partsWithFailures[failedPartResultCounter].detail.partNumber) && 
+            ((partsWithFailures[failedPartResultCounter].ValidPartOptions != null && partsWithFailures[failedPartResultCounter].ValidPartOptions.length > 0) ||
+            partsWithFailures[failedPartResultCounter].PackTypeUpsellOption != null)) {
+            const cacheKey = partNumber + '_' + currentNumberOfRows;
+            CachePartErrorData(cacheKey, partsWithFailures[failedPartResultCounter]);
+        }
+        failedPartResultCounter += 1;
+        currentNumberOfRows += 1;
+    });
+}
+
+function UpdatePartErrorRowIndex(currentRow, updatedIndex) {
+    $(currentRow).attr('rowIndex', updatedIndex);
+    $(currentRow).attr('id', 'PartErrorTable_Row' + updatedIndex);
+
+    // Update the index column of the row
+    const indexColumn = $(currentRow).find('[id*=PartErrorIndex]');
+    indexColumn.attr('id', 'PartErrorIndex_' + updatedIndex);
+    indexColumn.text(updatedIndex);
+
+    // Update the removal column of the row
+    const removalColumn = $(currentRow).find('[id*=PartErrorRemove]');
+    removalColumn.attr('rowIndex', updatedIndex);
+    removalColumn.attr('id', 'PartErrorRemove_' + updatedIndex);
+}
+
+function PartErrorRowInputChange(currentRow) {
+    //grab the input fields
+    const partNumberInput = $(currentRow).find('[id*=_PartNumber]');
+    const quantityInput = $(currentRow).find('[id*=_Quantity]');
+    const crefInput = $(currentRow).find('[id*=_Cref]');
+
+    //grab the original values
+    const originalPartNumberValue = $(partNumberInput).attr('originalValue');
+    const originalQuantityValue = $(quantityInput).attr('originalValue');
+    const originalCrefValue = $(crefInput).attr('originalValue');
+
+    //grab the current values
+    const currentPartNumberValue = $(partNumberInput).val();
+    const currentQuantityValue = $(quantityInput).val();
+    const currentCrefValue = $(crefInput).val();
+
+    //Make sure Quantity is just numbers
+    if (quantityInput && quantityInput[0]) {
+        ValidateQty(quantityInput[0]);
+    }
+    
+    //if any of the values do not match, hide the option message and display the add button if exists
+    if (originalPartNumberValue != currentPartNumberValue
+        || originalQuantityValue != currentQuantityValue
+        || originalCrefValue != currentCrefValue) {
+        $(currentRow).find('[id*=_ErrorMessage]').attr('hidden', '');
+        $(currentRow).find('[id*=_AddButton]').removeAttr('hidden');
+    }
+    else {
+        $(currentRow).find('[id*=_ErrorMessage]').removeAttr('hidden');
+        $(currentRow).find('[id*=_AddButton]').attr('hidden', '');
+    }
+}
+
+function PartErrorRowAddToCart(currentRow) {
+    //grab the input fields
+    const partNumberInput = $(currentRow).find('[id*=_PartNumber]');
+    const quantityInput = $(currentRow).find('[id*=_Quantity]');
+    const crefInput = $(currentRow).find('[id*=_Cref]');
+
+    //grab the current values
+    const currentPartNumberValue = $(partNumberInput).val();
+    const currentQuantityValue = $(quantityInput).val();
+    const currentCrefValue = $(crefInput).val();
+
+    const currentRowIndex = $(currentRow).attr('rowIndex');
+    if (currentPartNumberValue != null && currentPartNumberValue != '' && currentQuantityValue != null && currentQuantityValue != '') {
+        PartErrorRowCallImportParts(currentQuantityValue, currentPartNumberValue, currentCrefValue, currentRowIndex, currentRow);
+    }
+}
+
+function PartErrorRowCallImportParts(quantityValue, partNumberValue, cRefValue, rowIndex, row) {
+    const addPartString = quantityValue + ',' + partNumberValue + ',' + cRefValue;
+    const addedFrom = "updateErrorParts";
+    $.ajax({
+        url: "/ordering/shoppingcart/shoppingcart/ImportParts",
+        type: "POST",
+        data: { parts: addPartString },
+        success: function (data) {
+            const returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+            // Display error partial view if present
+            if (data.errorPartialView) {
+                InsertPartErrorRowAtSpecificIndex(data.errorPartialView, row, rowIndex, data.response.partResults)
+            }
+            else {
+                processAddPartsResponse(data.response, addedFrom, returnObj);
+                refreshPage(addedFrom, returnObj)
+                RemoveRowFromPartErrorTable(rowIndex);
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            genericErrorModal();
+        }
+    });
+}
+
+function InsertPartErrorRowAtSpecificIndex(newPartErrorRow, oldPartErrorRow, rowIndex, partResults) {
+    let newPartErrorRowObject = $(newPartErrorRow);
+    UpdatePartErrorRowIndex(newPartErrorRowObject, rowIndex);
+    UpdateCacheInfoWhenInsertingRow(oldPartErrorRow, rowIndex, partResults);
+    $(oldPartErrorRow).replaceWith(newPartErrorRowObject);
+}
+
+// Global cache to store AddDetailResponseMessage data for each part error row
+const partErrorDataCache = new Map();
+
+function CachePartErrorData(partNumberWithRow, addDetailResponseData) {
+    partErrorDataCache.set(partNumberWithRow, addDetailResponseData);
+}
+
+function GetCachedPartErrorData(partNumberWithRow) {
+    return partErrorDataCache.get(partNumberWithRow) || null;
+}
+
+function RemoveCachedPartErrorData(partNumberWithRow) {
+    partErrorDataCache.delete(partNumberWithRow);
+}
+
+function ClearCachedPartErrorData() {
+    partErrorDataCache.clear();
+}
+
+function UpdateCacheInfoWhenInsertingRow(oldPartErrorRow, rowIndex, partResults) {
+    const oldPartNumber = $(oldPartErrorRow).find('[id*=_PartNumber]').attr('originalValue');
+    const oldCacheKey = oldPartNumber + '_' + rowIndex;
+    RemoveCachedPartErrorData(oldCacheKey);
+    if (partResults.length == 1) {
+        if (partResults[0].ReturnValue == 1) {
+            return;
+        }
+        if ((partResults[0].ValidPartOptions != null && partResults[0].ValidPartOptions.length > 0) ||
+            partResults[0].PackTypeUpsellOption != null) {
+            const partNumber = partResults[0].detail.partNumber;
+            const cacheKey = partNumber + '_' + rowIndex;
+            CachePartErrorData(cacheKey, partResults[0]);
+        }
+    }
+}
+
+function GetPopupForError(viewOptionElement) {
+    const row = $(viewOptionElement).closest('tr');
+    const partNumber = row.find('[id*=_PartNumber]').attr('originalValue');
+    const rowIndex = row.attr('rowIndex');
+
+    // Create composite key with part number and row index
+    const cacheKey = partNumber + '_' + rowIndex;
+
+    // Retrieve the cached AddDetailResponseMessage
+    const partResultData = GetCachedPartErrorData(cacheKey);
+
+    if (!partResultData) {
+        genericErrorModal();
+        return;
+    }
+
+    let isPackTypeUpsellPopup = false;
+    if (partResultData.PackTypeUpsellOption != null
+        && ((partResultData.ValidPartOptions != null && partResultData.ValidPartOptions.length == 0) || partResultData.ValidPartOptions == null)) {
+        isPackTypeUpsellPopup = true;
+    }
+
+    if (isPackTypeUpsellPopup) {
+        PartErrorRowCallGetPackTypeUpsell(partResultData, rowIndex);
+    }
+    else {
+        PartErrorRowCallGetSuggestions(partResultData, rowIndex, row);
+    }
+}
+
+function PartErrorRowCallGetPackTypeUpsell(partResultData, rowIndex) {
+    // Call existing GetPackTypeUpsell endpoint to render the popup
+    $.ajax({
+        url: '/ordering/shoppingcart/shoppingcart/GetPackTypeUpsell',
+        type: 'POST', 
+        data: { partResult: partResultData, isUpdate: false },
+        success: function (returnData) {
+            let cleanData = DOMPurify.sanitize(returnData, { USE_PROFILES: { html: true } });
+            if (cleanData == true) {
+                refreshPage('importParts', null);
+            }
+            else if (cleanData == false) {
+                genericErrorModal();
+            }
+            else {
+                createSuggestionsModal($($.parseHTML(cleanData)).filter('#isValueCalculator').val());
+                SetUpErrorRowPackTypeUpsellPopup(cleanData, rowIndex);
+                dk.modal("#dialog-suggestions").show();
+
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            genericErrorModal();
+        }
+    });
+}
+
+function PartErrorRowCallGetSuggestions(partResultData, rowIndex, row) {
+    let isMultipleCRefForPartModal = false;
+    if (partResultData.ErrorCode == 21) {
+        isMultipleCRefForPartModal = true;
+    }
+    // Call existing GetSuggestions endpoint to render the popup
+    $.ajax({
+        url: '/ordering/shoppingcart/shoppingcart/GetSuggestions',
+        type: 'POST',
+        data: { partResult: partResultData },
+        success: function (returnData) {
+            let cleanData = DOMPurify.sanitize(returnData);
+            SetUpErrorRowPopUp(cleanData, partResultData, rowIndex, row, isMultipleCRefForPartModal);
+            dk.modal("#dialog-suggestions").show();
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            genericErrorModal();
+        }
+    });
+}
+
+function SetUpErrorRowPopUp(data, partResult, rowIndex, row, isMultipleCRefForPartModal) {
+    // Create the Modal Element
+    createSuggestionsModal($($.parseHTML(data)).filter('#isValueCalculator').val());
+    // Put the information in the popup
+    $("#dialog-suggestions #contentholder")[0].innerHTML = data;
+    $("#dialog-suggestions .dk-modal__title").text($('#popupTitle').val());
+
+    // Set the close buttons to delete the modal
+    if (isMultipleCRefForPartModal) {
+        $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupSkipButtonText').val()).on("click", function () {
+            let parts = [];
+            $("#dialog-suggestions input:radio:checked").each(function () {
+                const index = this.id.replace('suggestion', '');
+                const obj = { quantity: $("#validOptions_" + index + "__quantity")[0].value, partNumber: $("#validOptions_" + index + "__partNumber")[0].value, cRef: '' }
+                parts.push(obj);
+            });
+
+            if (parts.length <= 0) {
+                return;
+            }
+
+            const addedFrom = "ImportParts";
+            //make the call to the add parts endpoint so we can override customer ref lookup
+            $.ajax({
+                url: "/ordering/shoppingcart/shoppingcart/AddParts",
+                type: "POST",
+                data: { details: parts, overrideUpsell: false, overrideCustRefLookup: true },
+                success: function (data) {
+                    if (data.BaseSuccess) {
+                        let returnObj = { successesExist: false, successIndices: "", failuresExist: false, errors: "", warnings: "" };
+                        processAddPartsResponse(data, addedFrom, returnObj);
+                        if (!returnObj.failuresExist) {
+                            refreshPage("manualEntry", returnObj); 
+                        }
+                        RemoveRowFromPartErrorTable(rowIndex);
+                    }
+                    else {
+                        errorModal(data.BaseStatusCode, data.BaseStatusCodeDesc, data.BaseErrorMessage);
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    genericErrorModal();
+                }
+            });
+            clearSuggestionsModal()
+
+        });
+    }
+    else {
+        $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+            clearSuggestionsModal()
+        });
+    }
+
+    
+    $("#dialog-suggestions span[data-button='close'], #auto-modal-mask").on("click", function () {
+        clearSuggestionsModal()
+    });
+
+    // set up the primary button
+    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupAddButtonText').val()).on("click", function () {
+        let parts = [];
+        $("#dialog-suggestions input:radio:checked").each(function () {
+            const index = this.id.replace('suggestion', '');
+            let obj;
+            if (index == "rdoNewRef") {
+                obj = { quantity: $("#originalRequestedPart_quantity")[0].value, partNumber: $("#originalRequestedPart_partNumber")[0].value, cRef: $("#txtNewRef")[0].value }
+            }
+            else {
+                obj = { quantity: $("#validOptions_" + index + "__quantity")[0].value, partNumber: $("#validOptions_" + index + "__partNumber")[0].value, cRef: $("#validOptions_" + index + "__cRef")[0].value }
+            }
+            parts.push(obj);
+        });
+
+        if (parts.length > 0) {
+
+            PartErrorRowCallImportParts(parts[0].quantity, parts[0].partNumber, parts[0].cRef, rowIndex, row) 
+        }
+        clearSuggestionsModal()
+    });
+    
+    if (partResult.ErrorCode == 26) {
+        $("#radio").hide();
+        $("#radioColumn").hide();
+    }
+    if (partResult.ErrorCode == 27) {
+        $("#purchaselb").removeClass("hidden");
+        $("#validOptionslb").hide();
+        $("#radio").hide();
+        $("#radioColumn").hide();
+    }
+
+    // auto check first button
+    $("#dialog-suggestions input:radio:first").attr('checked', true);
+}
+
+function SetUpErrorRowPackTypeUpsellPopup(data, rowIndex) {
+    const chkDisableValueCalc = "<div class='disableValueCalcDiv dk-checkbox-group' id='disableValueCalcDiv'><input id='disableValueCalc' class='dk-checkbox' type='checkbox' onclick='showHideUpsellSubOptions();' /><label class='dk-checkbox-label' for='disableValueCalc'>" + $('#DisableValueCalcText').val() + "</label></div>"
+    $("#dialog-suggestions #contentholder")[0].innerHTML = data;
+    $("#dialog-suggestions span[data-button='primary']").text($('#BasePopupAddButtonText').val()).on("click", function () {
+        AddPackTypeUpsellToCart(this, false);
+        RemoveRowFromPartErrorTable(rowIndex);
+        clearSuggestionsModal()
+    });
+
+    $("#dialog-suggestions span[data-button='secondary']").text($('#BasePopupCancelButtonText').val()).on("click", function () {
+        clearSuggestionsModal()
+    });
+
+    $("#dialog-suggestions span[data-button='close'], #auto-modal-mask").on("click", function () {
+        // close function
+        $("#disableValueCalc").attr('checked', false);
+        $('#disableValueCalcDiv').remove();
+        clearSuggestionsModal()
+    });
+
+    // add 'disable value calculator' checkbox next to buttons
+    if (!($("#dialog-suggestions").parent().find(".disableValueCalcDiv").length) && ($('#valueCalcDisabled').val().toLowerCase() == 'false') && ($('#hasUpsell').val().toLowerCase() == 'true')) {
+        $("#dialog-suggestions").parent().find(".dk-modal__footer").append(chkDisableValueCalc);
+    }
+
+    $("input:radio[id='suggestion1']").on("click", function () {
+        $("input:radio[name='subOptions']").removeAttr("checked");
+        $("input:radio[name='subOptions']").attr("disabled", "true");
+    });
+
+    $("input:radio[id='suggestion0']").change(function () {
+        if (this.checked) {
+            $("input:radio[name='subOptions']").removeAttr("disabled");
+            $("input:radio[name='subOptions']").first().prop("checked", true);
+        }
+    });
+
+    $("#dialog-suggestions .dk-modal__title").text($('#popupTitle').val());
+    $("input:radio[name='suggestions']").first().prop("checked", true);
+
+    if ($("#originalRequestedPartIsDkr").val() == "True") {
+        $("#suggestion01").prop("checked", true);
+    }
+    else {
+        $("input:radio[name='subOptions']").first().prop("checked", true);
+    }
+}
+
+function getPartResultsAndCallAssignIndexToPartErrorRows(data) {
+    // ImportParts can create a new cart if there is no cart or it can add to an existing cart, so we need to check for both situations
+    // When creating a new cart we use data.response.DetailResponses.partResults
+    // When adding to an existing cart it is data.response.partResults
+    const partResults = data.response.partResults ||
+        (data.response.DetailResponses && data.response.DetailResponses.partResults);
+    if (partResults) {
+        AssignIndexToPartErrorRows(partResults);
+    }
+}
+;

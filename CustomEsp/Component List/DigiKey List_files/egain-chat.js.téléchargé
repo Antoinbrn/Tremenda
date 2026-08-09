@@ -1,0 +1,190 @@
+(function () {
+    var getUrlParameter = function (name) {
+        var ret = null;
+        if (name && "string" === typeof name) {
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+            var results = regex.exec(location.search);
+            if (results && 2 <= results.length) {
+                ret = decodeURIComponent(results[1].replace(/\+/g, " "));
+            }
+        }
+        return ret;
+    };
+
+    var getCurrentScript = function () {
+        return document.currentScript 
+        || document.querySelector("#_egainallowdockchat[data-agent-id]") 
+        || document.querySelector("#_egainallowdockchat");
+    };
+
+    var currentScript = getCurrentScript();
+
+    var getTenantAlias = function(url) {
+        if(url) {
+            var urlObject = typeof url !== 'object' ? new URL(url) : url;
+            if(urlObject) {
+            var urlParts = urlObject.pathname.split("/").filter(function(part) { return part; });
+            if (urlParts && urlParts.length > 1 && urlParts[0] !== "system") {
+                    return urlParts[0];
+                }
+                return null;
+            }
+            return null;
+        }
+        return null;
+    };
+
+    var isEgXsMode = ("true" === getUrlParameter("eg_tb_mode"));
+    var scriptElement = currentScript;
+    var dataset = scriptElement ? scriptElement.dataset : {};
+    var isAiAgent = !!dataset.agentId;
+    var egainDockedChatUrl = dataset.egainDockedChatUrl;
+    /* ignore if included through onetag instrumentation */
+    if (!isEgXsMode && (window.eGainOneTagUtil || (top !== self)) && !isAiAgent) {
+        return;
+    }
+
+    /*
+     * The function will return true if the chat relay frame approach is enabled
+     * At present it is only enabled for IE browser
+     * @returns {Boolean}
+     */
+    var isChatRelayIframeEnabled = function () {
+        var enabled = false;
+        if (navigator) {
+            enabled = 0 <= navigator.userAgent.indexOf("Trident") || 0 <= navigator.userAgent.indexOf("Edge");
+        }
+        return enabled;
+    };
+
+    /* 
+     * The function will return true if URL is valid 
+     * @param {type} urlString
+     * @returns {Boolean}
+     */ 
+    var isValidURL = function (urlString) {
+        try {
+          var url = new URL(urlString);
+          return true;
+        } catch (error) {
+          return false;
+        }
+    };
+
+    /* Create new Iframe */
+    var addChatRelayIframe = function () {
+        if (true === isChatRelayIframeEnabled()) {
+            var chatRelayIframeSrc = getEgainChatUrl();
+            if (chatRelayIframeSrc) {
+                var slashIndex = chatRelayIframeSrc.lastIndexOf("/");
+                if (0 <= slashIndex) {
+                    chatRelayIframeSrc = chatRelayIframeSrc.substring(0, slashIndex + 1);
+                    if (chatRelayIframeSrc) {
+                        chatRelayIframeSrc += "chat-relay-frame.html";
+                        var urlString = window.location.protocol + "//" + window.location.host;
+                        chatRelayIframeSrc += "?wsname=" + (isValidURL(urlString) ? urlString : "");
+                        var chatRelayIframe = document.createElement('iframe');
+                        chatRelayIframe.id = "egain-chat-relay-frame";
+                        chatRelayIframe.name = "egain-chat-relay-frame";
+                        chatRelayIframe.src = chatRelayIframeSrc;
+                        chatRelayIframe.title = "";
+                        (chatRelayIframe.frameElement || chatRelayIframe).style.cssText = "width: 0; height: 0; border: 0; position: fixed; left: 0; bottom: 0";
+                        where.appendChild(chatRelayIframe);
+                    }
+                }
+            }
+        }
+    };
+
+    var getDockedChatScriptUrl = function () {
+        if(egainDockedChatUrl) return egainDockedChatUrl;
+        var chatScriptPath = getEgainChatUrl();
+
+        var _dockedChatJSPath = chatScriptPath.substring(0, chatScriptPath.lastIndexOf("/") + 1);
+        if(isAiAgent) {
+            var urlObject = new URL(chatScriptPath);
+            var tenantAlias = getTenantAlias(chatScriptPath);
+            tenantAlias = tenantAlias ? "/" + tenantAlias : "";
+            _dockedChatJSPath = urlObject.origin + tenantAlias+ "/system/web/apps/aiagent/cusw/";
+        }
+        _dockedChatJSPath += "egain-docked-chat.js";
+        return _dockedChatJSPath;
+    };
+
+    var getDefaultDockedChatScriptUrl = function () {
+        var chatScriptPath = getEgainChatUrl();
+        return chatScriptPath.substring(0, chatScriptPath.lastIndexOf("/") + 1) + "egain-docked-chat.js";
+    };
+
+    var dom, doc, where, iframe = document.createElement('iframe');
+    iframe.src = "javascript:false";
+    iframe.title = "Chat";
+    (iframe.frameElement || iframe).style.cssText = "width: 0; height: 0; border: 0";
+    where = document.getElementsByTagName('head')[0];
+    where.appendChild(iframe);
+    addChatRelayIframe();
+
+    /* load egain-docked-chat.js file inside iframe */
+    try {
+        doc = iframe.contentWindow.document;
+    } catch (e) {
+        dom = document.domain;
+        iframe.src = "javascript:var d=document.open();d.domain='" + dom + "';void(0);";
+        doc = iframe.contentWindow.document;
+    }
+    doc.open()._l = function () {
+        if (dom)
+            this.domain = dom;
+        var src = getEgainChatUrl();
+        if (src !== "") {
+            var docRef = this;
+            var appendTarget = docRef.body || docRef.documentElement;
+
+            var loadScript = function (url, onerror, onload) {
+                var js = docRef.createElement("script");
+                js.id = "egain-docked-chat-async";
+                js.src = url;
+                js.onerror = onerror;
+                js.onload = onload;
+                var scriptElement = currentScript;
+                if (scriptElement) {
+                    var scriptAttributes = scriptElement.dataset;
+                    for (var key in scriptAttributes) {
+                        if (scriptAttributes.hasOwnProperty(key)) {
+                            js.setAttribute('data-' + key, scriptAttributes[key]);
+                        }
+                    }
+                }
+                appendTarget.appendChild(js);
+            };
+
+            if (isAiAgent) {
+                loadScript(getDockedChatScriptUrl(), function () {
+                    loadScript(getDefaultDockedChatScriptUrl());
+                });
+            } else {
+                loadScript(getDockedChatScriptUrl());
+            }
+        }
+    };
+    doc.write('<body onload="document._l();">');
+    doc.close();
+
+    function getEgainChatUrl() {
+        var src = "";
+        var addOn = currentScript;
+        if (addOn && addOn.src) {
+            src = addOn.src;
+        }
+        if (src === "") {
+            var scripts = document.getElementsByTagName('SCRIPT');
+            for (var i = 0; i < scripts.length; i++) {
+                if (scripts[i].src.replace(/\\/, "/").indexOf("/egain-chat.") !== -1) {
+                    src = scripts[i].src;
+                }
+            }
+        }
+        return src;
+    }
+})();

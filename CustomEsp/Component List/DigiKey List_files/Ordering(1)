@@ -1,0 +1,799 @@
+/* Minification failed. Returning unminified contents.
+(698,6): run-time error JS1004: Expected ';'
+(701,10): run-time error JS1004: Expected ';'
+(791,58-59): run-time error JS1010: Expected identifier: .
+(791,58-59): run-time error JS1195: Expected expression: .
+(791,74-78): run-time error JS1034: Unmatched 'else'; no 'if' defined: else
+ */
+/*! @license DOMPurify 3.2.7 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.2.7/LICENSE */
+!function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self).DOMPurify=t()}(this,(function(){"use strict";const{entries:e,setPrototypeOf:t,isFrozen:n,getPrototypeOf:o,getOwnPropertyDescriptor:r}=Object;let{freeze:i,seal:a,create:l}=Object,{apply:c,construct:s}="undefined"!=typeof Reflect&&Reflect;i||(i=function(e){return e}),a||(a=function(e){return e}),c||(c=function(e,t){for(var n=arguments.length,o=new Array(n>2?n-2:0),r=2;r<n;r++)o[r-2]=arguments[r];return e.apply(t,o)}),s||(s=function(e){for(var t=arguments.length,n=new Array(t>1?t-1:0),o=1;o<t;o++)n[o-1]=arguments[o];return new e(...n)});const u=w(Array.prototype.forEach),m=w(Array.prototype.lastIndexOf),p=w(Array.prototype.pop),f=w(Array.prototype.push),d=w(Array.prototype.splice),h=w(String.prototype.toLowerCase),g=w(String.prototype.toString),T=w(String.prototype.match),y=w(String.prototype.replace),E=w(String.prototype.indexOf),A=w(String.prototype.trim),_=w(Object.prototype.hasOwnProperty),S=w(RegExp.prototype.test),b=(N=TypeError,function(){for(var e=arguments.length,t=new Array(e),n=0;n<e;n++)t[n]=arguments[n];return s(N,t)});var N;function w(e){return function(t){t instanceof RegExp&&(t.lastIndex=0);for(var n=arguments.length,o=new Array(n>1?n-1:0),r=1;r<n;r++)o[r-1]=arguments[r];return c(e,t,o)}}function R(e,o){let r=arguments.length>2&&void 0!==arguments[2]?arguments[2]:h;t&&t(e,null);let i=o.length;for(;i--;){let t=o[i];if("string"==typeof t){const e=r(t);e!==t&&(n(o)||(o[i]=e),t=e)}e[t]=!0}return e}function O(e){for(let t=0;t<e.length;t++){_(e,t)||(e[t]=null)}return e}function v(t){const n=l(null);for(const[o,r]of e(t)){_(t,o)&&(Array.isArray(r)?n[o]=O(r):r&&"object"==typeof r&&r.constructor===Object?n[o]=v(r):n[o]=r)}return n}function D(e,t){for(;null!==e;){const n=r(e,t);if(n){if(n.get)return w(n.get);if("function"==typeof n.value)return w(n.value)}e=o(e)}return function(){return null}}const x=i(["a","abbr","acronym","address","area","article","aside","audio","b","bdi","bdo","big","blink","blockquote","body","br","button","canvas","caption","center","cite","code","col","colgroup","content","data","datalist","dd","decorator","del","details","dfn","dialog","dir","div","dl","dt","element","em","fieldset","figcaption","figure","font","footer","form","h1","h2","h3","h4","h5","h6","head","header","hgroup","hr","html","i","img","input","ins","kbd","label","legend","li","main","map","mark","marquee","menu","menuitem","meter","nav","nobr","ol","optgroup","option","output","p","picture","pre","progress","q","rp","rt","ruby","s","samp","search","section","select","shadow","slot","small","source","spacer","span","strike","strong","style","sub","summary","sup","table","tbody","td","template","textarea","tfoot","th","thead","time","tr","track","tt","u","ul","var","video","wbr"]),L=i(["svg","a","altglyph","altglyphdef","altglyphitem","animatecolor","animatemotion","animatetransform","circle","clippath","defs","desc","ellipse","enterkeyhint","exportparts","filter","font","g","glyph","glyphref","hkern","image","inputmode","line","lineargradient","marker","mask","metadata","mpath","part","path","pattern","polygon","polyline","radialgradient","rect","slot","stop","style","switch","symbol","text","textpath","title","tref","tspan","view","vkern"]),C=i(["feBlend","feColorMatrix","feComponentTransfer","feComposite","feConvolveMatrix","feDiffuseLighting","feDisplacementMap","feDistantLight","feDropShadow","feFlood","feFuncA","feFuncB","feFuncG","feFuncR","feGaussianBlur","feImage","feMerge","feMergeNode","feMorphology","feOffset","fePointLight","feSpecularLighting","feSpotLight","feTile","feTurbulence"]),k=i(["animate","color-profile","cursor","discard","font-face","font-face-format","font-face-name","font-face-src","font-face-uri","foreignobject","hatch","hatchpath","mesh","meshgradient","meshpatch","meshrow","missing-glyph","script","set","solidcolor","unknown","use"]),I=i(["math","menclose","merror","mfenced","mfrac","mglyph","mi","mlabeledtr","mmultiscripts","mn","mo","mover","mpadded","mphantom","mroot","mrow","ms","mspace","msqrt","mstyle","msub","msup","msubsup","mtable","mtd","mtext","mtr","munder","munderover","mprescripts"]),M=i(["maction","maligngroup","malignmark","mlongdiv","mscarries","mscarry","msgroup","mstack","msline","msrow","semantics","annotation","annotation-xml","mprescripts","none"]),U=i(["#text"]),z=i(["accept","action","align","alt","autocapitalize","autocomplete","autopictureinpicture","autoplay","background","bgcolor","border","capture","cellpadding","cellspacing","checked","cite","class","clear","color","cols","colspan","controls","controlslist","coords","crossorigin","datetime","decoding","default","dir","disabled","disablepictureinpicture","disableremoteplayback","download","draggable","enctype","enterkeyhint","exportparts","face","for","headers","height","hidden","high","href","hreflang","id","inert","inputmode","integrity","ismap","kind","label","lang","list","loading","loop","low","max","maxlength","media","method","min","minlength","multiple","muted","name","nonce","noshade","novalidate","nowrap","open","optimum","part","pattern","placeholder","playsinline","popover","popovertarget","popovertargetaction","poster","preload","pubdate","radiogroup","readonly","rel","required","rev","reversed","role","rows","rowspan","spellcheck","scope","selected","shape","size","sizes","slot","span","srclang","start","src","srcset","step","style","summary","tabindex","title","translate","type","usemap","valign","value","width","wrap","xmlns","slot"]),P=i(["accent-height","accumulate","additive","alignment-baseline","amplitude","ascent","attributename","attributetype","azimuth","basefrequency","baseline-shift","begin","bias","by","class","clip","clippathunits","clip-path","clip-rule","color","color-interpolation","color-interpolation-filters","color-profile","color-rendering","cx","cy","d","dx","dy","diffuseconstant","direction","display","divisor","dur","edgemode","elevation","end","exponent","fill","fill-opacity","fill-rule","filter","filterunits","flood-color","flood-opacity","font-family","font-size","font-size-adjust","font-stretch","font-style","font-variant","font-weight","fx","fy","g1","g2","glyph-name","glyphref","gradientunits","gradienttransform","height","href","id","image-rendering","in","in2","intercept","k","k1","k2","k3","k4","kerning","keypoints","keysplines","keytimes","lang","lengthadjust","letter-spacing","kernelmatrix","kernelunitlength","lighting-color","local","marker-end","marker-mid","marker-start","markerheight","markerunits","markerwidth","maskcontentunits","maskunits","max","mask","media","method","mode","min","name","numoctaves","offset","operator","opacity","order","orient","orientation","origin","overflow","paint-order","path","pathlength","patterncontentunits","patterntransform","patternunits","points","preservealpha","preserveaspectratio","primitiveunits","r","rx","ry","radius","refx","refy","repeatcount","repeatdur","restart","result","rotate","scale","seed","shape-rendering","slope","specularconstant","specularexponent","spreadmethod","startoffset","stddeviation","stitchtiles","stop-color","stop-opacity","stroke-dasharray","stroke-dashoffset","stroke-linecap","stroke-linejoin","stroke-miterlimit","stroke-opacity","stroke","stroke-width","style","surfacescale","systemlanguage","tabindex","tablevalues","targetx","targety","transform","transform-origin","text-anchor","text-decoration","text-rendering","textlength","type","u1","u2","unicode","values","viewbox","visibility","version","vert-adv-y","vert-origin-x","vert-origin-y","width","word-spacing","wrap","writing-mode","xchannelselector","ychannelselector","x","x1","x2","xmlns","y","y1","y2","z","zoomandpan"]),H=i(["accent","accentunder","align","bevelled","close","columnsalign","columnlines","columnspan","denomalign","depth","dir","display","displaystyle","encoding","fence","frame","height","href","id","largeop","length","linethickness","lspace","lquote","mathbackground","mathcolor","mathsize","mathvariant","maxsize","minsize","movablelimits","notation","numalign","open","rowalign","rowlines","rowspacing","rowspan","rspace","rquote","scriptlevel","scriptminsize","scriptsizemultiplier","selection","separator","separators","stretchy","subscriptshift","supscriptshift","symmetric","voffset","width","xmlns"]),F=i(["xlink:href","xml:id","xlink:title","xml:space","xmlns:xlink"]),B=a(/\{\{[\w\W]*|[\w\W]*\}\}/gm),W=a(/<%[\w\W]*|[\w\W]*%>/gm),G=a(/\$\{[\w\W]*/gm),Y=a(/^data-[\-\w.\u00B7-\uFFFF]+$/),j=a(/^aria-[\-\w]+$/),X=a(/^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|matrix):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i),q=a(/^(?:\w+script|data):/i),$=a(/[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g),K=a(/^html$/i),V=a(/^[a-z][.\w]*(-[.\w]+)+$/i);var Z=Object.freeze({__proto__:null,ARIA_ATTR:j,ATTR_WHITESPACE:$,CUSTOM_ELEMENT:V,DATA_ATTR:Y,DOCTYPE_NAME:K,ERB_EXPR:W,IS_ALLOWED_URI:X,IS_SCRIPT_OR_DATA:q,MUSTACHE_EXPR:B,TMPLIT_EXPR:G});const J=1,Q=3,ee=7,te=8,ne=9,oe=function(){return"undefined"==typeof window?null:window};var re=function t(){let n=arguments.length>0&&void 0!==arguments[0]?arguments[0]:oe();const o=e=>t(e);if(o.version="3.2.7",o.removed=[],!n||!n.document||n.document.nodeType!==ne||!n.Element)return o.isSupported=!1,o;let{document:r}=n;const a=r,c=a.currentScript,{DocumentFragment:s,HTMLTemplateElement:N,Node:w,Element:O,NodeFilter:B,NamedNodeMap:W=n.NamedNodeMap||n.MozNamedAttrMap,HTMLFormElement:G,DOMParser:Y,trustedTypes:j}=n,q=O.prototype,$=D(q,"cloneNode"),V=D(q,"remove"),re=D(q,"nextSibling"),ie=D(q,"childNodes"),ae=D(q,"parentNode");if("function"==typeof N){const e=r.createElement("template");e.content&&e.content.ownerDocument&&(r=e.content.ownerDocument)}let le,ce="";const{implementation:se,createNodeIterator:ue,createDocumentFragment:me,getElementsByTagName:pe}=r,{importNode:fe}=a;let de={afterSanitizeAttributes:[],afterSanitizeElements:[],afterSanitizeShadowDOM:[],beforeSanitizeAttributes:[],beforeSanitizeElements:[],beforeSanitizeShadowDOM:[],uponSanitizeAttribute:[],uponSanitizeElement:[],uponSanitizeShadowNode:[]};o.isSupported="function"==typeof e&&"function"==typeof ae&&se&&void 0!==se.createHTMLDocument;const{MUSTACHE_EXPR:he,ERB_EXPR:ge,TMPLIT_EXPR:Te,DATA_ATTR:ye,ARIA_ATTR:Ee,IS_SCRIPT_OR_DATA:Ae,ATTR_WHITESPACE:_e,CUSTOM_ELEMENT:Se}=Z;let{IS_ALLOWED_URI:be}=Z,Ne=null;const we=R({},[...x,...L,...C,...I,...U]);let Re=null;const Oe=R({},[...z,...P,...H,...F]);let ve=Object.seal(l(null,{tagNameCheck:{writable:!0,configurable:!1,enumerable:!0,value:null},attributeNameCheck:{writable:!0,configurable:!1,enumerable:!0,value:null},allowCustomizedBuiltInElements:{writable:!0,configurable:!1,enumerable:!0,value:!1}})),De=null,xe=null,Le=!0,Ce=!0,ke=!1,Ie=!0,Me=!1,Ue=!0,ze=!1,Pe=!1,He=!1,Fe=!1,Be=!1,We=!1,Ge=!0,Ye=!1,je=!0,Xe=!1,qe={},$e=null;const Ke=R({},["annotation-xml","audio","colgroup","desc","foreignobject","head","iframe","math","mi","mn","mo","ms","mtext","noembed","noframes","noscript","plaintext","script","style","svg","template","thead","title","video","xmp"]);let Ve=null;const Ze=R({},["audio","video","img","source","image","track"]);let Je=null;const Qe=R({},["alt","class","for","id","label","name","pattern","placeholder","role","summary","title","value","style","xmlns"]),et="http://www.w3.org/1998/Math/MathML",tt="http://www.w3.org/2000/svg",nt="http://www.w3.org/1999/xhtml";let ot=nt,rt=!1,it=null;const at=R({},[et,tt,nt],g);let lt=R({},["mi","mo","mn","ms","mtext"]),ct=R({},["annotation-xml"]);const st=R({},["title","style","font","a","script"]);let ut=null;const mt=["application/xhtml+xml","text/html"];let pt=null,ft=null;const dt=r.createElement("form"),ht=function(e){return e instanceof RegExp||e instanceof Function},gt=function(){let e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};if(!ft||ft!==e){if(e&&"object"==typeof e||(e={}),e=v(e),ut=-1===mt.indexOf(e.PARSER_MEDIA_TYPE)?"text/html":e.PARSER_MEDIA_TYPE,pt="application/xhtml+xml"===ut?g:h,Ne=_(e,"ALLOWED_TAGS")?R({},e.ALLOWED_TAGS,pt):we,Re=_(e,"ALLOWED_ATTR")?R({},e.ALLOWED_ATTR,pt):Oe,it=_(e,"ALLOWED_NAMESPACES")?R({},e.ALLOWED_NAMESPACES,g):at,Je=_(e,"ADD_URI_SAFE_ATTR")?R(v(Qe),e.ADD_URI_SAFE_ATTR,pt):Qe,Ve=_(e,"ADD_DATA_URI_TAGS")?R(v(Ze),e.ADD_DATA_URI_TAGS,pt):Ze,$e=_(e,"FORBID_CONTENTS")?R({},e.FORBID_CONTENTS,pt):Ke,De=_(e,"FORBID_TAGS")?R({},e.FORBID_TAGS,pt):v({}),xe=_(e,"FORBID_ATTR")?R({},e.FORBID_ATTR,pt):v({}),qe=!!_(e,"USE_PROFILES")&&e.USE_PROFILES,Le=!1!==e.ALLOW_ARIA_ATTR,Ce=!1!==e.ALLOW_DATA_ATTR,ke=e.ALLOW_UNKNOWN_PROTOCOLS||!1,Ie=!1!==e.ALLOW_SELF_CLOSE_IN_ATTR,Me=e.SAFE_FOR_TEMPLATES||!1,Ue=!1!==e.SAFE_FOR_XML,ze=e.WHOLE_DOCUMENT||!1,Fe=e.RETURN_DOM||!1,Be=e.RETURN_DOM_FRAGMENT||!1,We=e.RETURN_TRUSTED_TYPE||!1,He=e.FORCE_BODY||!1,Ge=!1!==e.SANITIZE_DOM,Ye=e.SANITIZE_NAMED_PROPS||!1,je=!1!==e.KEEP_CONTENT,Xe=e.IN_PLACE||!1,be=e.ALLOWED_URI_REGEXP||X,ot=e.NAMESPACE||nt,lt=e.MATHML_TEXT_INTEGRATION_POINTS||lt,ct=e.HTML_INTEGRATION_POINTS||ct,ve=e.CUSTOM_ELEMENT_HANDLING||{},e.CUSTOM_ELEMENT_HANDLING&&ht(e.CUSTOM_ELEMENT_HANDLING.tagNameCheck)&&(ve.tagNameCheck=e.CUSTOM_ELEMENT_HANDLING.tagNameCheck),e.CUSTOM_ELEMENT_HANDLING&&ht(e.CUSTOM_ELEMENT_HANDLING.attributeNameCheck)&&(ve.attributeNameCheck=e.CUSTOM_ELEMENT_HANDLING.attributeNameCheck),e.CUSTOM_ELEMENT_HANDLING&&"boolean"==typeof e.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements&&(ve.allowCustomizedBuiltInElements=e.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements),Me&&(Ce=!1),Be&&(Fe=!0),qe&&(Ne=R({},U),Re=[],!0===qe.html&&(R(Ne,x),R(Re,z)),!0===qe.svg&&(R(Ne,L),R(Re,P),R(Re,F)),!0===qe.svgFilters&&(R(Ne,C),R(Re,P),R(Re,F)),!0===qe.mathMl&&(R(Ne,I),R(Re,H),R(Re,F))),e.ADD_TAGS&&(Ne===we&&(Ne=v(Ne)),R(Ne,e.ADD_TAGS,pt)),e.ADD_ATTR&&(Re===Oe&&(Re=v(Re)),R(Re,e.ADD_ATTR,pt)),e.ADD_URI_SAFE_ATTR&&R(Je,e.ADD_URI_SAFE_ATTR,pt),e.FORBID_CONTENTS&&($e===Ke&&($e=v($e)),R($e,e.FORBID_CONTENTS,pt)),je&&(Ne["#text"]=!0),ze&&R(Ne,["html","head","body"]),Ne.table&&(R(Ne,["tbody"]),delete De.tbody),e.TRUSTED_TYPES_POLICY){if("function"!=typeof e.TRUSTED_TYPES_POLICY.createHTML)throw b('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');if("function"!=typeof e.TRUSTED_TYPES_POLICY.createScriptURL)throw b('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');le=e.TRUSTED_TYPES_POLICY,ce=le.createHTML("")}else void 0===le&&(le=function(e,t){if("object"!=typeof e||"function"!=typeof e.createPolicy)return null;let n=null;const o="data-tt-policy-suffix";t&&t.hasAttribute(o)&&(n=t.getAttribute(o));const r="dompurify"+(n?"#"+n:"");try{return e.createPolicy(r,{createHTML:e=>e,createScriptURL:e=>e})}catch(e){return console.warn("TrustedTypes policy "+r+" could not be created."),null}}(j,c)),null!==le&&"string"==typeof ce&&(ce=le.createHTML(""));i&&i(e),ft=e}},Tt=R({},[...L,...C,...k]),yt=R({},[...I,...M]),Et=function(e){f(o.removed,{element:e});try{ae(e).removeChild(e)}catch(t){V(e)}},At=function(e,t){try{f(o.removed,{attribute:t.getAttributeNode(e),from:t})}catch(e){f(o.removed,{attribute:null,from:t})}if(t.removeAttribute(e),"is"===e)if(Fe||Be)try{Et(t)}catch(e){}else try{t.setAttribute(e,"")}catch(e){}},_t=function(e){let t=null,n=null;if(He)e="<remove></remove>"+e;else{const t=T(e,/^[\r\n\t ]+/);n=t&&t[0]}"application/xhtml+xml"===ut&&ot===nt&&(e='<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>'+e+"</body></html>");const o=le?le.createHTML(e):e;if(ot===nt)try{t=(new Y).parseFromString(o,ut)}catch(e){}if(!t||!t.documentElement){t=se.createDocument(ot,"template",null);try{t.documentElement.innerHTML=rt?ce:o}catch(e){}}const i=t.body||t.documentElement;return e&&n&&i.insertBefore(r.createTextNode(n),i.childNodes[0]||null),ot===nt?pe.call(t,ze?"html":"body")[0]:ze?t.documentElement:i},St=function(e){return ue.call(e.ownerDocument||e,e,B.SHOW_ELEMENT|B.SHOW_COMMENT|B.SHOW_TEXT|B.SHOW_PROCESSING_INSTRUCTION|B.SHOW_CDATA_SECTION,null)},bt=function(e){return e instanceof G&&("string"!=typeof e.nodeName||"string"!=typeof e.textContent||"function"!=typeof e.removeChild||!(e.attributes instanceof W)||"function"!=typeof e.removeAttribute||"function"!=typeof e.setAttribute||"string"!=typeof e.namespaceURI||"function"!=typeof e.insertBefore||"function"!=typeof e.hasChildNodes)},Nt=function(e){return"function"==typeof w&&e instanceof w};function wt(e,t,n){u(e,(e=>{e.call(o,t,n,ft)}))}const Rt=function(e){let t=null;if(wt(de.beforeSanitizeElements,e,null),bt(e))return Et(e),!0;const n=pt(e.nodeName);if(wt(de.uponSanitizeElement,e,{tagName:n,allowedTags:Ne}),Ue&&e.hasChildNodes()&&!Nt(e.firstElementChild)&&S(/<[/\w!]/g,e.innerHTML)&&S(/<[/\w!]/g,e.textContent))return Et(e),!0;if(e.nodeType===ee)return Et(e),!0;if(Ue&&e.nodeType===te&&S(/<[/\w]/g,e.data))return Et(e),!0;if(!Ne[n]||De[n]){if(!De[n]&&vt(n)){if(ve.tagNameCheck instanceof RegExp&&S(ve.tagNameCheck,n))return!1;if(ve.tagNameCheck instanceof Function&&ve.tagNameCheck(n))return!1}if(je&&!$e[n]){const t=ae(e)||e.parentNode,n=ie(e)||e.childNodes;if(n&&t){for(let o=n.length-1;o>=0;--o){const r=$(n[o],!0);r.__removalCount=(e.__removalCount||0)+1,t.insertBefore(r,re(e))}}}return Et(e),!0}return e instanceof O&&!function(e){let t=ae(e);t&&t.tagName||(t={namespaceURI:ot,tagName:"template"});const n=h(e.tagName),o=h(t.tagName);return!!it[e.namespaceURI]&&(e.namespaceURI===tt?t.namespaceURI===nt?"svg"===n:t.namespaceURI===et?"svg"===n&&("annotation-xml"===o||lt[o]):Boolean(Tt[n]):e.namespaceURI===et?t.namespaceURI===nt?"math"===n:t.namespaceURI===tt?"math"===n&&ct[o]:Boolean(yt[n]):e.namespaceURI===nt?!(t.namespaceURI===tt&&!ct[o])&&!(t.namespaceURI===et&&!lt[o])&&!yt[n]&&(st[n]||!Tt[n]):!("application/xhtml+xml"!==ut||!it[e.namespaceURI]))}(e)?(Et(e),!0):"noscript"!==n&&"noembed"!==n&&"noframes"!==n||!S(/<\/no(script|embed|frames)/i,e.innerHTML)?(Me&&e.nodeType===Q&&(t=e.textContent,u([he,ge,Te],(e=>{t=y(t,e," ")})),e.textContent!==t&&(f(o.removed,{element:e.cloneNode()}),e.textContent=t)),wt(de.afterSanitizeElements,e,null),!1):(Et(e),!0)},Ot=function(e,t,n){if(Ge&&("id"===t||"name"===t)&&(n in r||n in dt))return!1;if(Ce&&!xe[t]&&S(ye,t));else if(Le&&S(Ee,t));else if(!Re[t]||xe[t]){if(!(vt(e)&&(ve.tagNameCheck instanceof RegExp&&S(ve.tagNameCheck,e)||ve.tagNameCheck instanceof Function&&ve.tagNameCheck(e))&&(ve.attributeNameCheck instanceof RegExp&&S(ve.attributeNameCheck,t)||ve.attributeNameCheck instanceof Function&&ve.attributeNameCheck(t,e))||"is"===t&&ve.allowCustomizedBuiltInElements&&(ve.tagNameCheck instanceof RegExp&&S(ve.tagNameCheck,n)||ve.tagNameCheck instanceof Function&&ve.tagNameCheck(n))))return!1}else if(Je[t]);else if(S(be,y(n,_e,"")));else if("src"!==t&&"xlink:href"!==t&&"href"!==t||"script"===e||0!==E(n,"data:")||!Ve[e]){if(ke&&!S(Ae,y(n,_e,"")));else if(n)return!1}else;return!0},vt=function(e){return"annotation-xml"!==e&&T(e,Se)},Dt=function(e){wt(de.beforeSanitizeAttributes,e,null);const{attributes:t}=e;if(!t||bt(e))return;const n={attrName:"",attrValue:"",keepAttr:!0,allowedAttributes:Re,forceKeepAttr:void 0};let r=t.length;for(;r--;){const i=t[r],{name:a,namespaceURI:l,value:c}=i,s=pt(a),m=c;let f="value"===a?m:A(m);if(n.attrName=s,n.attrValue=f,n.keepAttr=!0,n.forceKeepAttr=void 0,wt(de.uponSanitizeAttribute,e,n),f=n.attrValue,!Ye||"id"!==s&&"name"!==s||(At(a,e),f="user-content-"+f),Ue&&S(/((--!?|])>)|<\/(style|title|textarea)/i,f)){At(a,e);continue}if("attributename"===s&&T(f,"href")){At(a,e);continue}if(n.forceKeepAttr)continue;if(!n.keepAttr){At(a,e);continue}if(!Ie&&S(/\/>/i,f)){At(a,e);continue}Me&&u([he,ge,Te],(e=>{f=y(f,e," ")}));const d=pt(e.nodeName);if(Ot(d,s,f)){if(le&&"object"==typeof j&&"function"==typeof j.getAttributeType)if(l);else switch(j.getAttributeType(d,s)){case"TrustedHTML":f=le.createHTML(f);break;case"TrustedScriptURL":f=le.createScriptURL(f)}if(f!==m)try{l?e.setAttributeNS(l,a,f):e.setAttribute(a,f),bt(e)?Et(e):p(o.removed)}catch(t){At(a,e)}}else At(a,e)}wt(de.afterSanitizeAttributes,e,null)},xt=function e(t){let n=null;const o=St(t);for(wt(de.beforeSanitizeShadowDOM,t,null);n=o.nextNode();)wt(de.uponSanitizeShadowNode,n,null),Rt(n),Dt(n),n.content instanceof s&&e(n.content);wt(de.afterSanitizeShadowDOM,t,null)};return o.sanitize=function(e){let t=arguments.length>1&&void 0!==arguments[1]?arguments[1]:{},n=null,r=null,i=null,l=null;if(rt=!e,rt&&(e="\x3c!--\x3e"),"string"!=typeof e&&!Nt(e)){if("function"!=typeof e.toString)throw b("toString is not a function");if("string"!=typeof(e=e.toString()))throw b("dirty is not a string, aborting")}if(!o.isSupported)return e;if(Pe||gt(t),o.removed=[],"string"==typeof e&&(Xe=!1),Xe){if(e.nodeName){const t=pt(e.nodeName);if(!Ne[t]||De[t])throw b("root node is forbidden and cannot be sanitized in-place")}}else if(e instanceof w)n=_t("\x3c!----\x3e"),r=n.ownerDocument.importNode(e,!0),r.nodeType===J&&"BODY"===r.nodeName||"HTML"===r.nodeName?n=r:n.appendChild(r);else{if(!Fe&&!Me&&!ze&&-1===e.indexOf("<"))return le&&We?le.createHTML(e):e;if(n=_t(e),!n)return Fe?null:We?ce:""}n&&He&&Et(n.firstChild);const c=St(Xe?e:n);for(;i=c.nextNode();)Rt(i),Dt(i),i.content instanceof s&&xt(i.content);if(Xe)return e;if(Fe){if(Be)for(l=me.call(n.ownerDocument);n.firstChild;)l.appendChild(n.firstChild);else l=n;return(Re.shadowroot||Re.shadowrootmode)&&(l=fe.call(a,l,!0)),l}let m=ze?n.outerHTML:n.innerHTML;return ze&&Ne["!doctype"]&&n.ownerDocument&&n.ownerDocument.doctype&&n.ownerDocument.doctype.name&&S(K,n.ownerDocument.doctype.name)&&(m="<!DOCTYPE "+n.ownerDocument.doctype.name+">\n"+m),Me&&u([he,ge,Te],(e=>{m=y(m,e," ")})),le&&We?le.createHTML(m):m},o.setConfig=function(){gt(arguments.length>0&&void 0!==arguments[0]?arguments[0]:{}),Pe=!0},o.clearConfig=function(){ft=null,Pe=!1},o.isValidAttribute=function(e,t,n){ft||gt({});const o=pt(e),r=pt(t);return Ot(o,r,n)},o.addHook=function(e,t){"function"==typeof t&&f(de[e],t)},o.removeHook=function(e,t){if(void 0!==t){const n=m(de[e],t);return-1===n?void 0:d(de[e],n,1)[0]}return p(de[e])},o.removeHooks=function(e){de[e]=[]},o.removeAllHooks=function(){de={afterSanitizeAttributes:[],afterSanitizeElements:[],afterSanitizeShadowDOM:[],beforeSanitizeAttributes:[],beforeSanitizeElements:[],beforeSanitizeShadowDOM:[],uponSanitizeAttribute:[],uponSanitizeElement:[],uponSanitizeShadowNode:[]}},o}();return re}));
+//# sourceMappingURL=purify.min.js.map
+;
+
+//****************************************************************************************************//
+//*** Ordering ***
+//****************************************************************************************************//
+
+var datepickerOptions;
+
+$(document).ready(function () {
+    modalDefaults();
+    // Add request verification token to form data for all ajax requests. It'll be a form param for posts, and a query param for gets
+    $.ajaxSetup({
+        cache: false,
+        data: {
+            __RequestVerificationToken: $('input[name=__RequestVerificationToken]').val()
+        },
+        // strip out hidden &ltr; characters (used to force browser to display stuff left-to-right. used for part numbers). 
+        // Users could copy/paste part numbers from somewhere on the Israel/Hebrew site and paste them in to part entry, along with those hidden characters. This removes them before sending.
+        beforeSend: function (jqXHR, settings) {
+            if (settings.data != undefined) {
+                settings.data = settings.data.replace(/&lrm;|\u200E/gi, '');
+            }
+        }
+    });
+
+    /* DatePicker setup */
+    var userLang = $('input[name="BaseDatePickerLanguageString"]').val();   // use "" for en, 2-letter ISO for others
+    var options = $.extend(
+        {},                                 // empty object  
+        $.datepicker.regional[userLang],    // this does language localization
+        {
+            dateFormat: $('input[name="BaseDatePickerDateFormatString"]').val(), // date format. uses Extensions/JQueryUIDatePickerHelper
+            minDate: $('input[name="BaseDatePickerDateFrom"]').val(),            // start date (dynamic, based on today's date)
+            defaultDate: getDatePickerDefaultDate($('#BaseDatePickerDateFromStringEnUS').val()), // same jquery val result as ^ but in en-US format for getDatePickerDefaultDate call
+            maxDate: $('input[name="BaseDatePickerDateTo"]').val(),              // end date (dynamic, based on today's date and currency)
+            beforeShowDay: $.datepicker.noWeekends                             // exclude weekends
+        }
+    );
+
+    datepickerOptions = options;
+
+    $(".datePicker").datepicker(options);
+
+    // Promotion choose remove/delete popup
+    $("#yesDeletePromotionButton, #removePromotionalCreditButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Remove Promo - Yes"
+        }
+        dataLayer.push(gtmValue)
+        deletePromotion();
+    })
+
+    $("#removePromotionalCreditButtonSubmit").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Criteria Not Met - Remove"
+        }
+        dataLayer.push(gtmValue)
+        deletePromotion();
+    })
+
+    $("#cancelDeletePromotionButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Remove Promo - Cancel"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#okAcceptPromotionButton").on("click", function () {
+        // THIS MUST CHANGE IN FUTURE PROMOTION RELEASES
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': $('#BasePromotionDesc').val() == "10\$-off-of-100\$" || $('#BasePromotionDesc').val() == "10\$-off-of-50\$" ?
+                "Promo Credit $10 Off - OK" :
+                "Promo Credit Free Shipping - OK"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#okPromotionErrorButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Error - OK"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#reportPromotionErrorButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Error - Report Error"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#okPromotionRemovedButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Removed - OK"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#okPromotionInvalidButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Invalid - OK"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#closePromotionInvalidButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Invalid - Close"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#closePromotionRemovedButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Removed - Close"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#closePromotionErrorButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Error - Close"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#closeDeletePromotionButton").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Remove Promo - Close"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#closeAcceptPromotionButton").on("click", function () {
+        // THIS MUST CHANGE IN FUTURE PROMOTION RELEASES
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': $('#BasePromotionDesc').val() == "10\$-off-of-100\$" || $('#BasePromotionDesc').val() == "10\$-off-of-50\$" ?
+                "Promo Credit $10 Off - Close" :
+                "Promo Credit Free Shipping - Close"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    $("#xCartSummaryBoxPromotionButton, #xSummaryBoxPromotionButton").on("click", function () {
+        // THIS MUST CHANGE IN FUTURE PROMOTION RELEASES
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': $('#BasePromotionDesc').val() == "10\$-off-of-100\$" || $('#BasePromotionDesc').val() == "10\$-off-of-50\$" ?
+                "Promo Credit $10 Off - X" :
+                "Promo Shipping Credit - X"
+        }
+        dataLayer.push(gtmValue)
+    })
+
+    // Promotion go back to shopping cart
+    $("#toShoppingCart").on("click", function () {
+        const gtmValue = {
+            'event': 'promotional_credit_click',
+            'click_text': "Promo Criteria Not Met - Return to Cart"
+        }
+        dataLayer.push(gtmValue)
+        startSpinner();
+        // Takes base of URL (www.digikey.xx/ordering) and appends path to shoppingcart
+        let cartUrl = new URL("/ordering/shoppingcart", window.location.href)
+        window.location.replace(cartUrl.href);
+    })
+
+    // Show popup if promotion removed
+    if ($("#BasePromotionRemoved").val() == "True") {
+        dk.modal("#dialog-promotion-removed").show();
+    }
+
+    // Show popup if promotion already exists when trying add another
+    if ($("#BaseExistingPromotion").val() == "True") {
+        dk.modal("#dialog-existing-promotion").show();
+    }
+
+    // Show popup if promotion invalid
+    if ($("#BasePromotionInvalid").val() == "True") {
+        dk.modal("#dialog-promotion-invalid").show();
+    }
+
+    // Show popup if promotion invalid on submit page
+    if ($("#BasePromotionInvalidSubmit").val() == "True") {
+        dk.modal("#dialog-promotion-invalid-submit").show();
+    }
+
+    // Show popup if promotion invalid on submit page
+    if ($("#BasePromotionRemovedSubmit").val() == "True") {
+        dk.modal("#dialog-promotion-removed-submit").show();
+    }
+
+    if ($("#BasePromotionAdded").val() == "True") {
+        dk.modal("#dialog-accept-promotion").show();
+    }
+
+    if ($("#BasePromotionError").val() == "True") {
+        dk.modal("#dialog-error-promotion").show();
+    }
+});
+
+function addDays(date, days) {
+    var result = new Date(date);
+    result.setDate(date.getDate() + days);
+    return result;
+}
+
+function getDatePickerDefaultDate(dateFromEnUS) {
+    var result = new Date(dateFromEnUS);
+    if (result.getDay() === 6) {
+        //Sets day to next Monday if Saturday
+        result = addDays(result, 2);
+    }
+    else if (result.getDay() === 0) {
+        //Sets day to next Monday if Sunday
+        result = addDays(result, 1);
+    }
+    return result;
+}
+
+function modalDefaults() {
+    $(document).on('click', '.ui-widget-overlay', function () {
+        $(".ui-dialog-titlebar-close").trigger('click');
+    });
+
+    var dialogMaxHeight = window.innerHeight - 25;
+    $.extend($.ui.dialog.prototype.options, {
+        resizable: false,
+        draggable: false,
+        modal: true,
+        closeOnEscape: true,
+        maxHeight: dialogMaxHeight,
+        close: function (e) { $(this).dialog('close'); },
+        width: 'auto',
+        maxWidth: '700px',
+        create: function (event, ui) {
+            $(this).css({ "min-width": "260px" });
+        },
+        open: function (event, ui) {
+            $(".ui-dialog-buttonpane").find(':button').focus();
+        }
+    });
+}
+
+function dkDropdownDDL() {
+    $('.dk-dropdown:not(:hidden)').each(function () {
+        var whatDropdown = $(this).attr("id");
+        dk.dropdowns(whatDropdown);
+    });
+}
+
+$.validator.setDefaults({
+    ignore: ":hidden:not(select.chosen), .hidden select, .hidden input, select.hidden"
+});
+
+//make dropdowns go up for any chosen select closer than 300 from the bottom
+//$(document).on("mouseover", ".chosen-container", function () {
+//    try {
+//        if (!$('#divShippingAddress').dialog('isOpen')) {
+//            var dropDownOffset = $(this).offset().top;
+//            var windowHeight = $(window).scrollTop() + $(window).height();
+//            var delta = windowHeight - dropDownOffset;
+//            if (delta < 300) {
+//                $(this).addClass("chosen-drop-up");
+//            }
+//            else {
+//                $(this).removeClass("chosen-drop-up");
+//            }
+//        }
+//    }
+//    catch (ex) {
+//        var dropDownOffset2 = $(this).offset().top;
+//        var windowHeight2 = $(window).scrollTop() + $(window).height();
+//        var delta2 = windowHeight2 - dropDownOffset2;
+//        if (delta2 < 300) {
+//            $(this).addClass("chosen-drop-up");
+//        }
+//        else {
+//            $(this).removeClass("chosen-drop-up");
+//        }
+//    }
+//});
+
+//validation show/hide for the chosen selects
+//$(document).on("change", "select.chosen", function () {
+//    var chosenId = $(this).attr("id");
+//    if ($(this).val() == "0" || $(this).val() == "" || $(this).val() == null) {
+//        $(this).addClass('input-validation-error').removeClass('valid');
+//        $('#' + chosenId + '-error').show();
+//    } else {
+//        $(this).removeClass('input-validation-error').addClass('valid');
+//        $('#' + chosenId + '-error').hide();
+//    }
+//});
+
+// Set the label width to the widest label plus padding
+function setLabelWidth(labelClass) {
+    $("." + labelClass + ":visible").css('display', 'inline');
+
+    var widestWidth = 0;
+    $("." + labelClass + ":visible").each(function () {
+
+        var text = $(this).html();
+        $(this).html('<span>' + text + '</span>');
+        var width = $(this).find('span:first').width();
+        $(this).html(text);
+
+        if ($(this).hasClass("required")) {
+            width += 11  // Account for the asterisk
+        }
+
+        if (width > widestWidth) {
+            widestWidth = width;
+        }
+    });
+
+    $("." + labelClass + ":visible").css('display', '');
+    $('head').append("<style> ." + labelClass + " { width:" + widestWidth + "px }</style>");
+}
+
+// Generic Error Dialog to be resued everywhere
+function genericErrorDialog(message) {
+    if (message === undefined) {
+        message = "";
+    }
+    if (message.length > 0) {
+        $("#errorMessage").html(message);
+    }
+    else {
+        $("#errorMessage").html($('#BasePopupGenericErrorDialog').val());
+    }
+    $("#errorDialog").dialog(
+        {
+            dialogClass: "no-close-button",
+            title: $('#BasePopupGenericErrorTitle').val(),
+            buttons: [
+                {
+                    text: $('#BasePopupOkButtonText').val(),
+                    click: function () {
+                        $(this).dialog("close");
+                    }
+                }
+            ]
+        }
+    );
+}
+
+function genericErrorModal(message) {
+    if (message === undefined) {
+        message = "";
+    };
+    if (message.length <= 0) {
+        message = $('#BasePopupGenericErrorDialog').val();
+    };
+    var key = $("aside[id*='modal_']").length;
+    var title = $('#BasePopupGenericErrorTitle').val();
+    var cta = $('#BasePopupOkButtonText').val();
+    if (!$("#modal_" + key).length) {
+        $("<aside id='modal_" + key + "' class='dk-modal--sm' role='dialog' aria-model='true' aria-hidden='true'>" +
+            "<header class='dk-modal__title'>" + title + "</header>" +
+            "<section class='dk-modal__content'>" + message + "</section>" +
+            "<footer class='dk-modal__footer'><span data-modal-dismiss='true' class='dk-btn__primary'>" + cta + "</span></footer>" +
+            "<span class='dk-modal__close' data-modal-dismiss='true'></span>" +
+            "</aside >").appendTo("body");
+        $("#modal_" + key + " a").addClass("dk-link");
+        $("#modal_" + key + " span[data-modal-dismiss='true']").on("click", function () { dk.modal("#modal_" + key).hide(); });
+        dk.modal("#modal_" + key).show();
+    } else {
+        dk.modal("#modal_" + key).show();
+    }
+}
+
+// Error Dialog
+function errorDialog(statusCode, statusCodeDesc, message) {
+    if (window.location.hostname.indexOf("local") !== -1) {
+        $("#errorMessage").html("StatusCode: " + statusCode + " " + statusCodeDesc + "<br><br>Error: " + message);
+    } else {
+        $("#errorMessage").html($('#BaseOrderingUnavailableText').val());
+    }
+    $("#errorDialog").dialog(
+        {
+            dialogClass: "no-close-button",
+            title: $('#BaseErrorText').val(),
+            buttons: [
+                {
+                    text: $('#BasePopupOkButtonText').val(),
+                    click: function () {
+                        $(this).dialog("close");
+                    }
+                }
+            ]
+        }
+    );
+}
+
+function errorModal(statusCode, statusCodeDesc, message) {
+    var errorModalMessage;
+    var title = $('#BaseErrorText').val();
+
+    if (window.location.hostname.indexOf("local") !== -1) {
+        errorModalMessage = "StatusCode: " + statusCode + " " + statusCodeDesc + "<br><br>Error: " + message;
+    } else {
+        title = $('#BaseOrderingUnavailableTitle').val();
+        errorModalMessage = $('#BaseOrderingUnavailableText').val();
+    }
+
+    var key = $("aside[id*='modal_']").length;
+    var cta = $('#BasePopupOkButtonText').val();
+    if (!$("#modal_" + key).length) {
+        $("<aside id='modal_" + key + "' class='dk-modal--sm' role='dialog' aria-model='true' aria-hidden='true'>" +
+            "<header class='dk-modal__title'>" + title + "</header>" +
+            "<section class='dk-modal__content'>" + errorModalMessage + "</section>" +
+            "<footer class='dk-modal__footer'><span data-modal-dismiss='true' class='dk-btn__primary'>" + cta + "</span></footer>" +
+            "<span class='dk-modal__close' data-modal-dismiss='true'></span>" +
+            "</aside >").appendTo("body");
+        $("#modal_" + key + " a").addClass("dk-link");
+        $("#modal_" + key + " span[data-modal-dismiss='true']").on("click", function () { dk.modal("#modal_" + key).hide(); });
+        dk.modal("#modal_" + key).show();
+    } else {
+        dk.modal("#modal_" + key).show();
+    }
+}
+
+//global Digit modal close - fix needs to be worked out in Digit
+function modalCloseTriggers() {
+    $("aside[class*='dk-modal'] [data-modal-dismiss='true']").on("click", function () {
+        var modalId = $(this).closest("aside[class*='dk-modal']").attr("id");
+        dk.modal("#" + modalId).hide();
+    })
+}
+
+function AddRequiredValidator(id) {
+    $('#' + id).rules('add', 'required');
+    $('#' + id).attr('required', true);
+    $("label[for='" + id + "']").removeClass('notRequired').addClass('required');
+}
+
+function RemoveRequiredValidator(id) {
+    let $element = $('#' + id);
+
+    // Check if element exists and has validation initialized
+    if ($element.length && $element.closest('form').data('validator')) {
+        $element.removeAttr('required');
+        $element.rules('remove', 'required');
+        $('#' + id + '-error').hide();
+        $element.addClass("valid");
+        $element.removeClass("input-validation-error");
+    }
+
+    $("label[for='" + id + "']").removeClass('required').addClass('notRequired');
+}
+
+
+// This is only used on pages that allow you to edit Addresses - Currently Address Page, Export Page and Shipping Page
+function ValidateJapanAddress(addressType) {
+    var japan = $('#' + addressType + 'Address_DisplayJapanAddress').val();
+    if (japan == 'True') {
+        var mailStop = $('#' + addressType + "Address_MailStop");
+        var addressLine1 = $('#' + addressType + "Address_AddressLine1");
+        var addressLine2 = $('#' + addressType + "Address_AddressLine2");
+
+        if ($.trim(mailStop.val()) == "" && $.trim(addressLine1.val()) == "" && $.trim(addressLine2.val()) == "") {
+            AddRequiredValidator(addressType + 'Address_MailStop');
+            AddRequiredValidator(addressType + 'Address_AddressLine1');
+            AddRequiredValidator(addressType + 'Address_AddressLine2');
+        }
+        else {
+            RemoveRequiredValidator(addressType + 'Address_MailStop');
+            RemoveRequiredValidator(addressType + 'Address_AddressLine1');
+            RemoveRequiredValidator(addressType + 'Address_AddressLine2');
+        }
+    }
+}
+
+// Used on both shopping cart page and submit page
+//function ShowDownloadPopup() {
+//    var allowCreditCard = $('#AllowPaymentTypeChange').val();
+//    if (allowCreditCard == 'True') {
+//        ShowHidePaymentOptions();
+//    }
+//    else {
+//        var popupDialogDownloadButton = $('#PopupDialogDownloadButton').val();
+//        var popupDialogCancelButton = $('#PopupDialogCancelButton').val();
+
+//        $(function () {
+//            $("#dialog-download").dialog({
+//                //resizable: false,
+//                //height: "auto",
+//                //width: 400,
+//                //modal: true,
+//                buttons: [
+//                    {
+//                        text: popupDialogDownloadButton,
+//                        click: function () {
+//                            if ($('#dialog-download input[name=downloadType]:checked').val() == "xlsx") {
+//                                $("#excelDownloadButton").click();
+//                            }
+//                            else if ($('#dialog-download input[name=downloadType]:checked').val() == "csv") {
+//                                $("#csvDownloadButton").click();
+//                            }
+//                            $(this).dialog("close");
+//                        }
+//                    },
+//                    {
+//                        text: popupDialogCancelButton,
+//                        click: function () {
+//                            $(this).dialog("close");
+//                        }
+//                    }
+//                ],
+//                close: function () {
+//                    $(this).dialog("close");
+//                }
+//            });
+//        });
+//    }
+//}
+
+function downloadFromPopup() {
+    if ($('#download-cart-modal input[name=downloadType]:checked').val() == "xlsx") {
+        $("#excelDownloadButton").click();
+    }
+    else if ($('#download-cart-modal input[name=downloadType]:checked').val() == "csv") {
+        $("#csvDownloadButton").click();
+    }
+    GTMShoppingcartClick("Download");
+}
+
+// Used on both shopping cart page and submit page
+function createDetailsDataTable() {
+    var downloadCSV = $("#DataTableDownloadCSV").val();
+    var downloadExcel = $("#DataTableDownloadExcel").val();
+    var copyClipboard = $("#DataTableCopyToClipboard").val();
+    var copiedText = $("#DataTableTableCopied").val();
+
+    var downloadButtonExcel = {
+        exportOptions: {
+            columns: [0, 1, 2, 3, 4, 5, 6, 10, 11],
+            format: {
+                header: function (data) {
+                    return data;
+                },
+                body: function (data, row, column, node) {
+                    if (column < 7) {
+                        return node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi, '').trim();
+                    }
+                    else {
+                        if (column === 7) {
+                            var cellValue = node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi, '').trim();
+                            return $.isNumeric(cellValue.replace(',', '.')) ? cellValue.replace(',', '.') : cellValue;
+                        } else {
+                            var cellValue = node.innerText.replace('€', '').replace('HK$', '').replace('AU$', '').replace('NT$', '').replace('$', '').replace(' kr', '')
+                                .replace('¥', '').replace('₱', '').replace('£', '').replace('₩', '').replace('kr. ', '').replace('kr ', '').replace('₪', '').trim();
+                            return $.isNumeric(cellValue.replace(',', '.')) ? cellValue.replace(',', '.') : cellValue;
+                        }
+                    }
+                }
+            }
+        },
+        className: "exportTableButton",
+        filename: function () {
+            return $("#BaseFileDownloadName").val();
+        }
+    };
+
+    var downloadButton = {
+        exportOptions: {
+            columns: [0, 1, 2, 3, 4, 5, 6, 10, 11],
+            format: {
+                header: function (data) {
+                    return data;
+                },
+                body: function (data, row, column, node) {
+                    return column === 8 ?
+                        node.innerText.replace('€', '').replace('HK$', '').replace('AU$', '').replace('NT$', '').replace('$', '').replace(' kr', '')
+                            .replace('¥', '').replace('₱', '').replace('£', '').replace('₩', '').replace('kr. ', '').replace('kr ', '').replace('₪', '').replace('₱', '')
+                            .replace('฿', '').replace(/&lrm;|\u200E/gi, '').trim() :
+                        node.innerText.replace("\r", "").replace("\n", " ").replace(/&lrm;|\u200E/gi,'').trim();
+                }
+            }
+            //charset: 'UTF-16'
+        },
+        className: "exportTableButton",
+        filename: function () {
+            return $("#BaseFileDownloadName").val();
+        }
+    };
+
+    $('.details .dataTable').DataTable({
+        "bSort": false,
+        "paging": true,
+        "bInfo": false,
+        "searching": false,
+        "autoWidth": false,
+        "iDisplayLength": -1,
+        "dom": 't<"clear"><"ro-exportTableButtons" B>',
+        "buttons": [
+            $.extend(true, {}, downloadButton, {
+                extend: "copyHtml5",
+                text: copyClipboard,
+                init: function (dt, node, config) {
+                    node.attr("id", "copyTableButton");
+                    node.attr("data-autoid", "copyToClipboard");
+                }
+            }),
+            $.extend(true, {}, downloadButton, {
+                extend: "csvHtml5",
+                charset: "utf-8",
+                bom: true,
+                text: downloadCSV,
+                init: function (dt, node, config) {
+                    node.attr("id", "csvDownloadButton");
+                    node.attr("data-autoid", "downloadCsv");
+                }
+            }),
+            $.extend(true, {}, downloadButtonExcel, {
+                extend: "excelHtml5",
+                text: downloadExcel,
+                title: '',
+                init: function (dt, node, config) {
+                    node.attr("id", "excelDownloadButton");
+                    node.attr("data-autoid", "downloadExcel");
+                }
+            })
+        ],
+        language: {
+            buttons: {
+                copyTitle: copiedText,
+                copySuccess: ''
+            }
+        }
+    });
+}
+
+function startSpinner() {
+    //check for existing loading div to not make multiple stacked which blocks the page. 
+    if (!$("#loadingDiv").length > 0) {
+        $("body").append("<div id='loadingDiv' class='ui-widget-overlay'><div id='spinner'></div></div>");
+        var divHeight = $(document).height();
+        $('#loadingDiv').show().css('height', divHeight);
+        $("#content").css("opacity", "0.55");
+        var opts = {
+            color: '#333'
+        };
+        var spinner = new Spinner(opts).spin(document.getElementById("spinner"));
+    }
+}
+
+function stopSpinner() {
+    $('#loadingDiv').remove();
+    $("#content").css("opacity", "1");
+}
+
+//function resetDropdown(dropdownId) {
+//    $("#" + dropdownId).removeAttr("dk-dropdown--init");
+//    $("#" + dropdownId).removeAttr("dk-dropdown-id");
+//    $("#" + dropdownId + " ~ div.dk-dropdown__container").remove();
+//    dk.dropdowns("#" + dropdownId);
+//}
+
+function GTMShoppingcartClick(clickText, eventState) {
+    var gtmValue;
+    if (eventState) {
+        gtmValue = {
+            'event': 'shopping_cart_click',
+            'click_text': clickText,
+            'event_state': eventState,
+        }
+    }
+    else {
+        gtmValue = {
+            'event': 'shopping_cart_click',
+            'click_text': clickText,
+        }
+    }
+    if (dataLayer !== undefined && dataLayer.push !== undefined) {
+        dataLayer.push({ ecommerce: null }); // Clear previous ecommerce object
+        dataLayer.push(gtmValue);
+    }
+}
+
+async function deletePromotion() {
+    let url = "/ordering/Shared/Shared/DeletePromotion";
+    let reloadWithSpinner = false;
+    await $.ajax({
+        url: url,
+        type: 'POST',
+        dataType: 'json',
+        success: function (data) {
+            if (data === true) {
+                reloadWithSpinner = true;
+            }
+            else {
+                dk.modal('#dialog-error-promotion').show();
+            }
+        },
+        error: function (req, status, error) {
+            genericErrorModal();
+        }
+    });
+    if (reloadWithSpinner) {
+        startSpinner();
+        // Takes base of URL (www.digikey.xx/ordering) and appends path (/shopping as example) without query params
+        let cartUrl = new URL(window.location.pathname, window.location.href)
+        window.location.replace(cartUrl.href);
+    }
+};
+function helpPopup(key, site, lang, xl) {
+    $.get('//www.digikey.com/services/global/Phrases.svc/rest/popup/' + key + '?country=' + site + '&lang=' + lang + '&db=' + siteCorePhraseDB, function (data) { showHelpModal(data, key, xl)} );
+}
+
+function helpPopupAndEventTagging(key, site, lang, eventState, clickText) {
+    GTMShoppingcartClick(eventState, clickText);
+    $.get('//www.digikey.com/services/global/Phrases.svc/rest/popup/' + key + '?country=' + site + '&lang=' + lang + '&db=' + siteCorePhraseDB, function (data) { showHelpModal(data, key); });
+}
+
+//jQuery Dialog
+function showHelpDialog(data) {
+    var dlg = $(data);
+    var btns = {};
+    btns[dlg.attr("close")] = function () { $(this).dialog("close"); };
+    dlg.addClass("helpPopup");
+    var dialogMaxHeight = window.innerHeight - 25;
+
+    dlg.dialog({
+        resizable: false,
+        draggable: false,
+        modal: true,
+        closeOnEscape: true,
+        maxHeight: dialogMaxHeight,
+        //close: function (e) { $(this).dialog('destroy').remove(); },
+        close: function (e) { $(this).dialog('close'); },
+        buttons: btns,
+        width: 'auto',
+        maxWidth: '700px',
+        create: function (event, ui) {
+            $(this).css({ "min-width": "260px" });
+            //$(".table-overflowWrapper").css("width", window.innerWidth - 65);
+
+        },
+        open: function (event, ui) {
+            $(".ui-dialog-buttonpane").find(':button').focus();
+        }
+    });
+}
+
+
+//Digit (StyleGuide) Modal
+function showHelpModal(data, key, xl) {
+    var mdl = $(data);
+    var title = mdl.attr("title");
+    var content = mdl.html();
+    var cta = mdl.attr("close");
+    if (!$("#" + key + "-modal").length) {
+        $("<aside id='" + key + "-modal' class='dk-modal" + (xl ? "--xl":"") +"' role='dialog' aria-model='true' aria-hidden='true'>" +
+            "<header class='dk-modal__title'>" + title + "</header>" +
+            "<section class='dk-modal__content'>" + content + "</section>" +
+            "<footer class='dk-modal__footer'><span data-modal-dismiss='true' class='dk-btn__primary'>" + cta + "</span></footer>" +
+            "<span class='dk-modal__close' data-modal-dismiss='true'></span>" +
+            "</aside >").appendTo("body");
+        $("#" + key + "-modal a").addClass("dk-link");
+        $("#" + key + "-modal span[data-modal-dismiss='true']").on("click", function () { dk.modal("#" + key + "-modal").hide(); });
+        dk.modal("#" + key + "-modal").show();
+    } else {
+        dk.modal("#" + key + "-modal").show();
+    }
+}
+
+//Help iPhones close the autoModal dialogs
+$(".dk-modal [data-modal-dismiss='true']").on("click", function () {
+    var modalId = $(this).closest(".dk-modal").attr("id");
+    dk.modal("#" + modalId).hide();
+});
+// this is the minified version, the full version can be found here: http://fgnass.github.io/spin.js/
+(function (t, e) { if (typeof exports == "object") module.exports = e(); else if (typeof define == "function" && define.amd) define(e); else t.Spinner = e() })(this, function () { "use strict"; var t = ["webkit", "Moz", "ms", "O"], e = {}, i; function o(t, e) { var i = document.createElement(t || "div"), o; for (o in e) i[o] = e[o]; return i } function n(t) { for (var e = 1, i = arguments.length; e < i; e++) t.appendChild(arguments[e]); return t } var r = function () { var t = o("style", { type: "text/css" }); n(document.getElementsByTagName("head")[0], t); return t.sheet || t.styleSheet }(); function s(t, o, n, s) { var a = ["opacity", o, ~~(t * 100), n, s].join("-"), f = .01 + n / s * 100, l = Math.max(1 - (1 - t) / o * (100 - f), t), d = i.substring(0, i.indexOf("Animation")).toLowerCase(), u = d && "-" + d + "-" || ""; if (!e[a]) { r.insertRule("@" + u + "keyframes " + a + "{" + "0%{opacity:" + l + "}" + f + "%{opacity:" + t + "}" + (f + .01) + "%{opacity:1}" + (f + o) % 100 + "%{opacity:" + t + "}" + "100%{opacity:" + l + "}" + "}", r.cssRules.length); e[a] = 1 } return a } function a(e, i) { var o = e.style, n, r; if (o[i] !== undefined) return i; i = i.charAt(0).toUpperCase() + i.slice(1); for (r = 0; r < t.length; r++) { n = t[r] + i; if (o[n] !== undefined) return n } } function f(t, e) { for (var i in e) t.style[a(t, i) || i] = e[i]; return t } function l(t) { for (var e = 1; e < arguments.length; e++) { var i = arguments[e]; for (var o in i) if (t[o] === undefined) t[o] = i[o] } return t } function d(t) { var e = { x: t.offsetLeft, y: t.offsetTop }; while (t = t.offsetParent) e.x += t.offsetLeft, e.y += t.offsetTop; return e } var u = { lines: 12, length: 7, width: 5, radius: 10, rotate: 0, corners: 1, color: "#000", direction: 1, speed: 1, trail: 100, opacity: 1 / 4, fps: 20, zIndex: 2e9, className: "spinner", top: "auto", left: "auto", position: "relative" }; function p(t) { if (typeof this == "undefined") return new p(t); this.opts = l(t || {}, p.defaults, u) } p.defaults = {}; l(p.prototype, { spin: function (t) { this.stop(); var e = this, n = e.opts, r = e.el = f(o(0, { className: n.className }), { position: n.position, width: 0, zIndex: n.zIndex }), s = n.radius + n.length + n.width, a, l; if (t) { t.insertBefore(r, t.firstChild || null); l = d(t); a = d(r); f(r, { left: (n.left == "auto" ? l.x - a.x + (t.offsetWidth >> 1) : parseInt(n.left, 10) + s) + "px", top: (n.top == "auto" ? l.y - a.y + (t.offsetHeight >> 1) : parseInt(n.top, 10) + s) + "px" }) } r.setAttribute("role", "progressbar"); e.lines(r, e.opts); if (!i) { var u = 0, p = (n.lines - 1) * (1 - n.direction) / 2, c, h = n.fps, m = h / n.speed, y = (1 - n.opacity) / (m * n.trail / 100), g = m / n.lines; (function v() { u++; for (var t = 0; t < n.lines; t++) { c = Math.max(1 - (u + (n.lines - t) * g) % m * y, n.opacity); e.opacity(r, t * n.direction + p, c, n) } e.timeout = e.el && setTimeout(v, ~~(1e3 / h)) })() } return e }, stop: function () { var t = this.el; if (t) { clearTimeout(this.timeout); if (t.parentNode) t.parentNode.removeChild(t); this.el = undefined } return this }, lines: function (t, e) { var r = 0, a = (e.lines - 1) * (1 - e.direction) / 2, l; function d(t, i) { return f(o(), { position: "absolute", width: e.length + e.width + "px", height: e.width + "px", background: t, boxShadow: i, transformOrigin: "left", transform: "rotate(" + ~~(360 / e.lines * r + e.rotate) + "deg) translate(" + e.radius + "px" + ",0)", borderRadius: (e.corners * e.width >> 1) + "px" }) } for (; r < e.lines; r++) { l = f(o(), { position: "absolute", top: 1 + ~(e.width / 2) + "px", transform: e.hwaccel ? "translate3d(0,0,0)" : "", opacity: e.opacity, animation: i && s(e.opacity, e.trail, a + r * e.direction, e.lines) + " " + 1 / e.speed + "s linear infinite" }); if (e.shadow) n(l, f(d("#000", "0 0 4px " + "#000"), { top: 2 + "px" })); n(t, n(l, d(e.color, "0 0 1px rgba(0,0,0,.1)"))) } return t }, opacity: function (t, e, i) { if (e < t.childNodes.length) t.childNodes[e].style.opacity = i } }); function c() { function t(t, e) { return o("<" + t + ' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">', e) } r.addRule(".spin-vml", "behavior:url(#default#VML)"); p.prototype.lines = function (e, i) { var o = i.length + i.width, r = 2 * o; function s() { return f(t("group", { coordsize: r + " " + r, coordorigin: -o + " " + -o }), { width: r, height: r }) } var a = -(i.width + i.length) * 2 + "px", l = f(s(), { position: "absolute", top: a, left: a }), d; function u(e, r, a) { n(l, n(f(s(), { rotation: 360 / i.lines * e + "deg", left: ~~r }), n(f(t("roundrect", { arcsize: i.corners }), { width: o, height: i.width, left: i.radius, top: -i.width >> 1, filter: a }), t("fill", { color: i.color, opacity: i.opacity }), t("stroke", { opacity: 0 })))) } if (i.shadow) for (d = 1; d <= i.lines; d++) u(d, -2, "progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)"); for (d = 1; d <= i.lines; d++) u(d); return n(e, l) }; p.prototype.opacity = function (t, e, i, o) { var n = t.firstChild; o = o.shadow && o.lines || 0; if (n && e + o < n.childNodes.length) { n = n.childNodes[e + o]; n = n && n.firstChild; n = n && n.firstChild; if (n) n.opacity = i } } } var h = f(o("group"), { behavior: "url(#default#VML)" }); if (!a(h, "transform") && h.adj) c(); else i = a(h, "animation"); return p });
+;
